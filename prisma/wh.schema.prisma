@@ -1,0 +1,49 @@
+// database
+datasource db {
+  provider = "mongodb"
+  url      = env("mongodb://zero-bugs:changeit@127.0.0.1:27017/wh.mongo.db")
+}
+
+// generator
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 8
+}
+
+// data models
+model WhImage {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  img_id      String   @unique
+  views       String
+  views       String
+  favorites   String
+  source      String
+  purity      String
+  category    String
+  dimension_x String
+  dimension_y String
+  resolution  String
+  ratio       String
+  file_size   String
+  file_type   String
+  created_at  String
+  path        String
+  tags        Tag[]?
+  uploader    Uploader?
+}
+
+model Tag {
+  id          String
+  name        String
+  alias       String?
+  category_id String
+  category    String
+  purity      String
+  created_at  String
+}
+
+model Uploader {
+  username    String
+  group       String
+}
