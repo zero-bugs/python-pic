@@ -18,40 +18,35 @@ generator client {
 
 // data models
 model WhImage {
-  id          String    @id
-  views       String
-  favorites   String
+  id          String       @unique
+  views       Int
+  favorites   Int
   source      String
   purity      String
   category    String
-  dimension_x String
-  dimension_y String
+  dimension_x Int
+  dimension_y Int
   resolution  String
   ratio       String
-  file_size   String
+  file_size   Int
   file_type   String
   created_at  String
   path        String
-  tags        Tag[]
-  uploader    Uploader? @relation(fields: [uploaderId], references: [id])
-  uploaderId  Int?
+  tags        String
+  uploader    String
 }
 
 model Tag {
-  id          String   @id
+  id          String       @unique
   name        String
   alias       String?
   category_id String
   category    String
   purity      String
   created_at  String
-  WhImage     WhImage? @relation(fields: [whImageId], references: [id])
-  whImageId   String?
 }
 
 model Uploader {
-  id       Int       @id @default(autoincrement())
-  username String
+  username String          @unique
   group    String
-  WhImage  WhImage[]
 }
