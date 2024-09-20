@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-from src.com.common.http.http_utils import HttpUtils
-from src.com.config.config_manager import ConfigManager
+from com.common.http.http_utils import HttpUtils
+from com.config.config_manager import ConfigManager
 
 
 class WhPicManager:

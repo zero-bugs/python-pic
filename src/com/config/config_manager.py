@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-from src.com.common.utils.utils import Utils
+from com.common.utils.utils import Utils
 
 
 class ConfigManager:

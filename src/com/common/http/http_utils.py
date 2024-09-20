@@ -6,8 +6,6 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import Timeout, RetryError
 
-from src.com.wh.meta.image_meta import ImageMeta
-from src.com.wh.meta.uploader_meta import UploaderMeta
 
 LOGGER = logging.getLogger(__name__)
 

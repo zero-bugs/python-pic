@@ -37,10 +37,10 @@ model WhImage {
 }
 
 model Tag {
-  id          String       @unique
+  id          Int         @unique
   name        String
   alias       String?
-  category_id String
+  category_id Int
   category    String
   purity      String
   created_at  String
