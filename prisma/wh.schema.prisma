@@ -17,6 +17,7 @@ generator client {
 }
 
 // data models
+// status 0-init; 1-todo; 2-doing; 3-done
 model WhImage {
   id          String       @unique
   views       Int
@@ -34,10 +35,11 @@ model WhImage {
   path        String
   tags        String
   uploader    String
+  status      Int          @default(0)
 }
 
 model Tag {
-  id          Int         @unique
+  id          Int          @unique
   name        String
   alias       String?
   category_id Int
@@ -47,6 +49,6 @@ model Tag {
 }
 
 model Uploader {
-  username String          @unique
+  username String           @unique
   group    String
 }

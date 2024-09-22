@@ -6,6 +6,8 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import Timeout, RetryError
 
+from com.wh.meta.image_meta import ImageMeta
+from com.wh.meta.uploader_meta import UploaderMeta
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,24 +77,24 @@ class HttpUtils:
             tags = []
 
 
-            imageMeta = ImageMeta()
-            imageMeta.id = image['id']
-            imageMeta.views = image['view']
-            imageMeta.favorites = image['favorites']
-            imageMeta.source = image['source']
-            imageMeta.purity = image['purity']
-            imageMeta.category = image['category']
-            imageMeta.dimension_x = image['']
-            imageMeta.dimension_y = image['']
-            imageMeta.ratio = image['']
-            imageMeta.file_size = image['']
-            imageMeta.file_type = image['']
-            imageMeta.created_at = image['']
-            imageMeta.path = image['']
-            imageMeta.tags = image['']
-            imageMeta.uploader = uploader
+            image_meta = ImageMeta()
+            image_meta.id = image['id']
+            image_meta.views = image['view']
+            image_meta.favorites = image['favorites']
+            image_meta.source = image['source']
+            image_meta.purity = image['purity']
+            image_meta.category = image['category']
+            image_meta.dimension_x = image['']
+            image_meta.dimension_y = image['']
+            image_meta.ratio = image['']
+            image_meta.file_size = image['']
+            image_meta.file_type = image['']
+            image_meta.created_at = image['']
+            image_meta.path = image['']
+            image_meta.tags = image['']
+            image_meta.uploader = uploader
 
 
     @staticmethod
-    def download_wh_images(images, isStopAuto):
+    def download_wh_images(images, is_stop_auto):
         pass

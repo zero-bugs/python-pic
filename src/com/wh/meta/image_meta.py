@@ -19,3 +19,4 @@ class ImageMeta:
         self.path = None
         self.tags = None
         self.uploader = None
+        self.status = 0

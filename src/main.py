@@ -17,25 +17,28 @@ async def main() -> None:
     await prisma.connect()
 
     async with prisma.tx() as transaction:
-        await WhImage.prisma(transaction).create(
-            data={
-                "id": "94x38z",
-                "views": 12,
-                "favorites": 0,
-                "source": "",
-                "purity": "sfw",
-                "category": "anime",
-                "dimension_x": 6742,
-                "dimension_y": 3534,
-                "resolution": "6742x3534",
-                "ratio": "1.91",
-                "file_size": 5070446,
-                "file_type": "image/jpeg",
-                "created_at": "2018-10-31 01:23:10",
-                "path": "https://w.wallhaven.cc/full/94/wallhaven-94x38z.jpg",
-                "tags": "0",
-                "uploader": "jim"
-            }
+        await WhImage.prisma(transaction).create_many(
+            data=[
+                {
+                    "id": "94x38z",
+                    "views": 12,
+                    "favorites": 0,
+                    "source": "",
+                    "purity": "sfw",
+                    "category": "anime",
+                    "dimension_x": 6742,
+                    "dimension_y": 3534,
+                    "resolution": "6742x3534",
+                    "ratio": "1.91",
+                    "file_size": 5070446,
+                    "file_type": "image/jpeg",
+                    "created_at": "2018-10-31 01:23:10",
+                    "path": "https://w.wallhaven.cc/full/94/wallhaven-94x38z.jpg",
+                    "tags": "0",
+                    "uploader": "jim"
+                },
+            ],
+            skip_duplicates=True
         )
 
         await Tag.prisma(transaction).create_many(
@@ -58,24 +61,19 @@ async def main() -> None:
                     "purity": "sfw",
                     "created_at": "2015-01-18 02:06:45"
                 }
-            ]
+            ],
+            skip_duplicates=True
         )
 
-        await Uploader.prisma(transaction).create(
-            data={
-                "username": "test-user",
-                "group": "User",
-            }
+        await Uploader.prisma(transaction).create_many(
+            data=[
+                {
+                    "username": "test-user",
+                    "group": "User",
+                },
+            ],
+            skip_duplicates=True
         )
-
-
-async def main1() -> None:
-    db = Prisma()
-    await db.connect()
-
-    # write your queries here
-
-    await db.disconnect()
 
 
 if __name__ == "__main__":
@@ -87,4 +85,4 @@ if __name__ == "__main__":
     #     "order": "desc*",
     # }
     # HttpUtils.fetch_with_retry(url, params, {})
-    asyncio.run(main1())
+    asyncio.run(main())
