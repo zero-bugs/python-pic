@@ -20,3 +20,23 @@ class ImageMeta:
         self.tags = None
         self.uploader = None
         self.status = 0
+
+    @staticmethod
+    def build_json_obj(item: dict[str]):
+        return {
+            "id": item['id'],
+            "views": item['views'],
+            "favorites": item['favorites'],
+            "source": item['source'],
+            "purity": item['purity'],
+            "category": item['category'],
+            "dimension_x": item['dimension_x'],
+            "dimension_y": item['dimension_y'],
+            "resolution": item['resolution'],
+            "ratio": item['ratio'],
+            "file_size": item['file_size'],
+            "file_type": item['file_type'],
+            "created_at": item['created_at'],
+            "path": item['path'],
+            "status": 0,
+        }

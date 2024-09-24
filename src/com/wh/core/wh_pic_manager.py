@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+from prisma.models import WhImage, Uploader, Tag
+
 from com.common.http.http_utils import HttpUtils
 from com.config.config_manager import ConfigManager
 from com.wh.db.wh_db_handler import WhDbHandler
+from com.wh.meta.image_meta import ImageMeta
 
 
 class WhPicManager:
     def __init__(self):
         self.db_handler = WhDbHandler()
 
-    def get_imgs_sorting_by_data(self, is_stop_auto=True, is_download=True):
+    def get_ims_sorting_by_data(self, is_stop_auto=True, is_download=True):
         """
         从当前时间向历史遍历，获取图片
         功能1：列举图片，同时下载；
@@ -30,7 +33,7 @@ class WhPicManager:
 
         result = HttpUtils.fetch_with_retry(url, params=params, headers=headers)
         meta = result['meta']
-        images = result['data']
+        data = result['data']
 
         current_page = 0
         per_page = 0
@@ -39,18 +42,30 @@ class WhPicManager:
             last_page = meta['last_page']
             per_page = meta['per_page']
 
-        self.db_handler.batch_insert_images(images)
+        images = self.get_images_from_resp(data)
+        self.db_handler.batch_insert_images(images, list(), list())
         if is_download:
             HttpUtils.download_wh_images(images, is_stop_auto)
-            self.db_handler.batch_update_images(images, 3)
+            self.db_handler.batch_update_images_status(images, 3)
 
         while current_page < last_page:
             current_page += current_page
             params['page'] = current_page
 
             result = HttpUtils.fetch_with_retry(url, params=params, headers=headers)
-            images = result['data']
-            self.db_handler.batch_insert_images(images)
+            data = result['data']
+
+            images = self.get_images_from_resp(data)
+            self.db_handler.batch_insert_images(images, list(), list())
             if is_download:
                 HttpUtils.download_wh_images(images, is_stop_auto)
-                self.db_handler.batch_update_images(images, 3)
+                self.db_handler.batch_update_images_status(images, 3)
+
+    def get_images_from_resp(self, data: dict[str]):
+        images = list()
+        if isinstance(data, list):
+            for item in data:
+                images.append(ImageMeta.build_json_obj(item))
+        else:
+            images.append(ImageMeta.build_json_obj(data))
+        return images
