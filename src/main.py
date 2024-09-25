@@ -18,9 +18,11 @@ os.environ['NO_PROXY'] = 'localhost'
 
 db_handler = WhDbHandler()
 
+
 async def main() -> None:
-    images = list()
-    images.append(
+    await db_handler.init()
+    image = list()
+    image.append(
         {
             "id": "94x38z",
             "views": 12,
@@ -41,15 +43,28 @@ async def main() -> None:
         }
     )
 
-    tags = list()
-    tags.append(
+    tag = list()
+    tag.append(
+        {
+            "id": 1,
+            "name": "anime",
+            "alias": "Chinese cartoons",
+            "category_id": 1,
+            "category": "Anime & Manga",
+            "purity": "sfw",
+            "created_at": "2015-01-16 02:06:45"
+        }
+    )
+
+    uploader = list()
+    uploader.append(
         {
             "username": "test-user",
             "group": "User",
         }
     )
 
-    await db_handler.batch_insert_images(images, tags, list())
+    await db_handler.batch_insert_images(image, tag, uploader)
 
 if __name__ == "__main__":
     # url = "https://wallhaven.cc/api/v1/search"
