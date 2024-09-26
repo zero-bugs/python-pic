@@ -9,6 +9,7 @@ from prisma.models import WhImage, Tag, Uploader
 
 from com.log.log_print import Log
 from com.common.http.http_utils import HttpUtils
+from com.wh.core.wh_pic_manager import WhPicManager
 from com.wh.db.wh_db_handler import WhDbHandler
 
 # 日志初始化
@@ -16,11 +17,10 @@ Log.logging_init()
 
 os.environ['NO_PROXY'] = 'localhost'
 
-db_handler = WhDbHandler()
 
-
-async def main() -> None:
-    await db_handler.init()
+async def test() -> None:
+    db_handler = WhDbHandler()
+    await db_handler.connect()
     image = list()
     image.append(
         {
@@ -55,6 +55,17 @@ async def main() -> None:
             "created_at": "2015-01-16 02:06:45"
         }
     )
+    tag.append(
+        {
+            "id": 2,
+            "name": "people",
+            "alias": "Chinese cartoons",
+            "category_id": 1,
+            "category": "Anime & Manga",
+            "purity": "nsfw",
+            "created_at": "2015-01-16 02:03:45"
+        }
+    )
 
     uploader = list()
     uploader.append(
@@ -65,6 +76,14 @@ async def main() -> None:
     )
 
     await db_handler.batch_insert_images(image, tag, uploader)
+
+
+async def main() -> None:
+    manager = WhPicManager()
+    await manager.connect()
+
+    await manager.get_ims_sorting_by_data(is_stop_auto=False, is_download=False)
+
 
 if __name__ == "__main__":
     # url = "https://wallhaven.cc/api/v1/search"

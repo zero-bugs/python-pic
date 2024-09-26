@@ -17,4 +17,5 @@ class Utils:
         if not os.path.exists(path):
             LOGGER.info("json file:{} not exist.".format(path))
         else:
-            return json.loads(path)
+            with open(path, 'r') as f:
+                return json.load(f)

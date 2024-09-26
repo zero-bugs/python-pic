@@ -6,6 +6,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import Timeout, RetryError
 
+from com.config.config_manager import ConfigManager
 from com.wh.meta.image_meta import ImageMeta
 from com.wh.meta.uploader_meta import UploaderMeta
 
@@ -41,7 +42,7 @@ class HttpUtils:
                     timeout=(3, 10),
                     params=params,
                     headers=headers,
-
+                    proxies=ConfigManager.get_proxy_config(),
                 )
             except Timeout as tx:
                 LOGGER.warning("http timeout.", tx)
@@ -60,22 +61,19 @@ class HttpUtils:
 
         return response.json()
 
-
-
     @staticmethod
-    def convert_json_to_meta(images:{}):
+    def convert_json_to_meta(images: {}):
         result = []
         if images is None:
             return result
 
-        image_array=json.loads(images)
+        image_array = json.loads(images)
         for image in image_array:
             uploader = UploaderMeta()
             uploader.username = image['uploader']['username']
             uploader.group = image['uploader']['group']
 
             tags = []
-
 
             image_meta = ImageMeta()
             image_meta.id = image['id']
@@ -93,7 +91,6 @@ class HttpUtils:
             image_meta.path = image['']
             image_meta.tags = image['']
             image_meta.uploader = uploader
-
 
     @staticmethod
     def download_wh_images(images, is_stop_auto):

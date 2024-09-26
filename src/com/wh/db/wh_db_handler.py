@@ -12,8 +12,11 @@ class WhDbHandler:
     def __init__(self):
         self.prisma = Prisma(auto_register=True)
 
-    async def init(self):
+    async def connect(self):
         await self.prisma.connect()
+
+    async def release(self):
+        await self.prisma.disconnect()
 
     async def batch_insert_images(self, images: list[dict[str, Any]], tags: list[dict[str, Any]],
                                   uploader: list[dict[str, Any]]):
@@ -35,7 +38,7 @@ class WhDbHandler:
 
         async with self.prisma.tx() as transaction:
             await WhImage.prisma(transaction).create_many(
-                data=img_update_list
+                data=img_create_list
             )
 
             await Tag.prisma(transaction).create_many(
@@ -54,7 +57,7 @@ class WhDbHandler:
                     }
                 )
 
-            for value in tag_create_list:
+            for value in tag_update_list:
                 await Tag.prisma(transaction).update(
                     data=value,
                     where={
@@ -62,7 +65,7 @@ class WhDbHandler:
                     }
                 )
 
-            for value in upd_create_list:
+            for value in upd_update_list:
                 await Uploader.prisma(transaction).update(
                     data=value,
                     where={
@@ -102,7 +105,7 @@ class WhDbHandler:
             if result is None:
                 create_entries.append(entry)
             else:
-                if self.is_need_update(entry, result):
+                if self.is_need_update(table, entry, result):
                     update_entries.append(entry)
         return create_entries, update_entries
 
@@ -129,8 +132,14 @@ class WhDbHandler:
                     }
                 )
 
-    def is_need_update(self, image, result):
-        return image["source"] != result.source or image["purity"] != result.purity or image["category"] != result.category or image["file_size"] != result.file_size or image["path"] != result.path
-
+    def is_need_update(self, table, entry, result):
+        if table.__name__ == 'WhImage':
+            return entry["created_at"] != result.created_at
+        elif table.__name__ == 'Tag':
+            return entry["created_at"] != result.created_at
+        elif table.__name__ == 'Uploader':
+            return entry["username"] != result.username or entry["group"] != result.group
+        else:
+            LOGGER.warning("invalid input table", table)
 
 
