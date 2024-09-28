@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-from com.common.utils.utils import Utils
+from common.utils.utils import Utils
 
 
 class ConfigManager:
@@ -23,7 +23,7 @@ class ConfigManager:
     @staticmethod
     def get_output_dir():
         jconfig = Utils.read_json_file('../config/app_config.json')
-        return jconfig['result']
+        return jconfig['path']
 
     @staticmethod
     def get_wh_query_images_api():

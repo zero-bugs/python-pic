@@ -8,6 +8,18 @@ from prisma.models import WhImage, Uploader, Tag
 
 LOGGER = logging.getLogger(__name__)
 
+
+def is_need_update(table, entry, result):
+    if table.__name__ == 'WhImage':
+        return entry["created_at"] != result.created_at
+    elif table.__name__ == 'Tag':
+        return entry["created_at"] != result.created_at
+    elif table.__name__ == 'Uploader':
+        return entry["username"] != result.username or entry["group"] != result.group
+    else:
+        LOGGER.warning("invalid input table", table)
+
+
 class WhDbHandler:
     def __init__(self):
         self.prisma = Prisma(auto_register=True)
@@ -30,7 +42,6 @@ class WhDbHandler:
 
         if images is None:
             return 0
-
 
         img_create_list, img_update_list = await self.handle_unique_insert(WhImage, images)
         tag_create_list, tag_update_list = await self.handle_unique_insert(Tag, tags)
@@ -80,7 +91,7 @@ class WhDbHandler:
             return create_entries, update_entries
 
         for entry in entries:
-            result=None
+            result = None
             if table.__name__ == 'WhImage':
                 result = await WhImage.prisma().find_first(
                     where={
@@ -105,41 +116,42 @@ class WhDbHandler:
             if result is None:
                 create_entries.append(entry)
             else:
-                if self.is_need_update(table, entry, result):
+                if is_need_update(table, entry, result):
                     update_entries.append(entry)
         return create_entries, update_entries
 
-    async def batch_update_images_status(self, images: list[WhImage], status):
-        """
-        更新图片相关字段
-        :param images:
-        :param status:
-        :return:
-        """
-
-        if images is None:
-            return 0
-
-        _, img_update_list = self.handle_unique_insert(WhImage, images)
-
-        with self.prisma.tx() as transaction:
-            for image in img_update_list:
-                image.status = status
-                await WhImage.prisma(transaction).update(
-                    data=image,
-                    where={
-                        "id": image.id
-                    }
-                )
-
-    def is_need_update(self, table, entry, result):
+    async def is_entry_exist(self, table, key):
         if table.__name__ == 'WhImage':
-            return entry["created_at"] != result.created_at
+            result = await WhImage.prisma().find_first(
+                where={
+                    "id": key
+                }
+            )
+            return result is None
         elif table.__name__ == 'Tag':
-            return entry["created_at"] != result.created_at
+            result = await Tag.prisma().find_first(
+                where={
+                    "id": key
+                }
+            )
+            return result is None
         elif table.__name__ == 'Uploader':
-            return entry["username"] != result.username or entry["group"] != result.group
+            result = await Uploader.prisma().find_first(
+                where={
+                    "username": key
+                }
+            )
+            return result is None
         else:
             LOGGER.warning("invalid input table", table)
+            return False
 
-
+    async def update_image_status(self, image, status):
+        await WhImage.prisma().update(
+            data={
+                "status": status
+            },
+            where={
+                "id": image['id']
+            }
+        )
