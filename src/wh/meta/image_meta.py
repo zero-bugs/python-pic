@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+from common.utils.utils import Utils
+
 
 class ImageMeta:
     def __init__(self):
@@ -23,6 +25,9 @@ class ImageMeta:
 
     @staticmethod
     def build_json_obj(item: dict[str]):
+        if 'created_at' not in item:
+            item['created_at'] = Utils.get_current_time()
+
         return {
             "id": item['id'],
             "views": item['views'],

@@ -13,6 +13,7 @@ from urllib3 import Retry
 
 from common.http.http_utils import HttpUtils
 from common.config.config_manager import ConfigManager
+from common.utils.utils import Utils
 from wh.core.pic_status import ImageStatus
 from wh.db.wh_db_handler import WhDbHandler
 from wh.meta.image_meta import ImageMeta
@@ -65,8 +66,9 @@ class WhPicManager:
         images = self.get_images_from_resp(data)
         await self.db_handler.batch_insert_images(images, list(), list())
         if is_download:
-            await self.download_wh_images(images, is_stop_auto)
+            await self.download_wh_images(images)
 
+        download_result = False
         while current_page < last_page:
             current_page += 1
             params['page'] = current_page
@@ -77,7 +79,12 @@ class WhPicManager:
             images = self.get_images_from_resp(data)
             await self.db_handler.batch_insert_images(images, list(), list())
             if is_download:
-                await self.download_wh_images(images, is_stop_auto)
+                download_result = await self.download_wh_images(images)
+
+            # 所有图片都无需下载时，不继续遍历
+            if download_result and is_stop_auto:
+                LOGGER.warning("no need continue download, current page: %d, url: %s", current_page, url)
+                break
 
             time.sleep(0.5)
 
@@ -90,32 +97,36 @@ class WhPicManager:
             images.append(ImageMeta.build_json_obj(data))
         return images
 
-    async def download_wh_images(self, images, is_stop_auto):
+    async def download_wh_images(self, images):
         """
         下载图片
         :param images:
-        :param is_stop_auto: True-如果清单中所有文件都存在，停止
-        :return:
+        :return: 是否都不需要下载
         """
         if images is None:
-            return
+            return False
 
-        download_path = ConfigManager.get_output_dir()
+        download_path = str(os.path.join(ConfigManager.get_output_dir(), ConfigManager.get_type()))
         # 检查路径是否存在
         if not os.path.exists(download_path):
             os.makedirs(download_path, exist_ok=True)
+
+        image_actual_no_need_dld = 0
         for image in images:
             # 检查图片是否存在
             image_name = image['id'] + self.get_pic_suffix(image['file_type'])
-            image_full_path = os.path.join(download_path, image['category'], image['purity'], image['created_at'][0:7])
+
+            image_full_path = os.path.join(download_path, image['category'], image['purity'], Utils.get_year_and_month_from_str(image['created_at']))
             if not os.path.exists(image_full_path):
                 os.makedirs(image_full_path, exist_ok=True)
             image_name_full_path = os.path.join(image_full_path, image_name)
             if os.path.exists(image_name_full_path):
+                image_actual_no_need_dld += 1
                 continue
 
             is_exist = await self.db_handler.is_entry_exist(WhImage, image['id'])
             if is_exist:
+                image_actual_no_need_dld += 1
                 continue
 
             response = None
@@ -157,6 +168,9 @@ class WhPicManager:
                 if response.status_code == 404:
                     await self.db_handler.update_image_status(image, ImageStatus.NOTFOUND)
                     LOGGER.warning("image not found. img:{}".format(image_name))
+                    image_actual_no_need_dld += 1
+        else:
+            return image_actual_no_need_dld == len(images)
 
 
     def get_pic_suffix(self, extension):
@@ -170,3 +184,10 @@ class WhPicManager:
         else:
             LOGGER.warning("pic suffix is not support. ", extension)
             return '.jpg'
+
+
+    def backup_full_scan_and_download(self):
+        """
+        读取数据库中没有下载的链接并下载
+        :return:
+        """

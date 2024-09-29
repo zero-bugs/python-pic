@@ -16,6 +16,11 @@ class ConfigManager:
             return {}
 
     @staticmethod
+    def get_type():
+        jconfig = Utils.read_json_file('../config/app_config.json')
+        return jconfig['type']
+
+    @staticmethod
     def get_api_key():
         jconfig = Utils.read_json_file('../config/app_config.json')
         return jconfig['apikey']

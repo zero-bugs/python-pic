@@ -155,3 +155,14 @@ class WhDbHandler:
                 "id": image['id']
             }
         )
+
+    async def list_images_by_date(self, take=10, skip=1):
+        await WhImage.prisma().find_many(
+            take=take,
+            skip=skip,
+            where={},
+            order={
+                'created_at': 'desc'
+            }
+        )
+       
