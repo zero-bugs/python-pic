@@ -14,7 +14,7 @@ os.environ['NO_PROXY'] = 'localhost'
 async def main() -> None:
     manager = WhPicManager()
     await manager.connect()
-    await manager.get_ims_sorting_by_date_api(is_stop_auto=True, is_download=True)
+    await manager.get_ims_sorting_by_date_api(is_stop_auto=False, is_download=True)
 
 
 async def main2() -> None:

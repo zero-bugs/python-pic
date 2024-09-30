@@ -114,6 +114,7 @@ class WhPicManager:
         image_actual_no_need_dld = 0
         for image in images:
             if image['purity'] != 'nsfw' and image['purity'] != 'sketchy':
+                image_actual_no_need_dld += 1
                 continue
             # 检查图片是否存在
             image_name = image['id'] + self.get_pic_suffix(image['file_type'])
@@ -134,6 +135,7 @@ class WhPicManager:
 
             response = await self.download_one_image(image['path'])
             if response is None:
+                image_actual_no_need_dld += 1
                 continue
 
             LOGGER.info("downloading image:%s", image['path'])
@@ -146,6 +148,7 @@ class WhPicManager:
                 LOGGER.warning("image not found. img:{}".format(image_name))
                 image_actual_no_need_dld += 1
         else:
+            LOGGER.info("downloaded:%d and list:%d", image_actual_no_need_dld, len(images))
             return image_actual_no_need_dld == len(images)
 
     async def download_one_image(self, url):

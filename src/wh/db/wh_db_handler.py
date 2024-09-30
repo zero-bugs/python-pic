@@ -127,21 +127,21 @@ class WhDbHandler:
                     "id": key
                 }
             )
-            return result is None
+            return result is not None
         elif table.__name__ == 'Tag':
             result = await Tag.prisma().find_first(
                 where={
                     "id": key
                 }
             )
-            return result is None
+            return result is not None
         elif table.__name__ == 'Uploader':
             result = await Uploader.prisma().find_first(
                 where={
                     "username": key
                 }
             )
-            return result is None
+            return result is not None
         else:
             LOGGER.warning("invalid input table", table)
             return False
