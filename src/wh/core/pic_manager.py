@@ -45,7 +45,7 @@ class WhPicManager:
         url = ConfigManager.get_wh_query_images_api()
         params = {
             "categories": "111",
-            "purity": "111",
+            "purity": "011",
             "sorting": "date_added",
             "order": "desc",
             "apikey": self.api_key
@@ -128,8 +128,8 @@ class WhPicManager:
                 image_actual_no_need_dld += 1
                 continue
 
-            is_exist = await self.db_handler.is_entry_exist(WhImage, image['id'])
-            if is_exist:
+            result = await self.db_handler.find_one_entry(WhImage, image['id'])
+            if result is None or result.status != ImageStatus.INITIAL:
                 image_actual_no_need_dld += 1
                 continue
 

@@ -120,31 +120,31 @@ class WhDbHandler:
                     update_entries.append(entry)
         return create_entries, update_entries
 
-    async def is_entry_exist(self, table, key):
+    async def find_one_entry(self, table, key):
         if table.__name__ == 'WhImage':
             result = await WhImage.prisma().find_first(
                 where={
                     "id": key
                 }
             )
-            return result is not None
+            return result
         elif table.__name__ == 'Tag':
             result = await Tag.prisma().find_first(
                 where={
                     "id": key
                 }
             )
-            return result is not None
+            return result
         elif table.__name__ == 'Uploader':
             result = await Uploader.prisma().find_first(
                 where={
                     "username": key
                 }
             )
-            return result is not None
+            return result
         else:
             LOGGER.warning("invalid input table", table)
-            return False
+            return None
 
     async def update_image_status(self, image, status):
         await WhImage.prisma().update(
