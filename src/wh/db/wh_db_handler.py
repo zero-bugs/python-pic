@@ -6,7 +6,7 @@ from typing import Any
 from prisma import Prisma
 from prisma.models import WhImage, Uploader, Tag
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger('common')
 
 
 def is_need_update(table, entry, result):
@@ -156,11 +156,14 @@ class WhDbHandler:
             }
         )
 
-    async def list_images_by_date(self, take=10, skip=1):
-        await WhImage.prisma().find_many(
+    async def list_images_by_date(self, condition=None, take=10, skip=0):
+        if condition is None:
+            condition = {}
+
+        return await WhImage.prisma().find_many(
             take=take,
             skip=skip,
-            where={},
+            where=condition,
             order={
                 'created_at': 'desc'
             }

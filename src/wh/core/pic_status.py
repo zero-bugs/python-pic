@@ -6,10 +6,9 @@
 # @Time        : 2024/9/28 22:47
 # @Description :
 """
-from enum import Enum
 
 
-class ImageStatus(Enum):
+class ImageStatus:
     INITIAL = 0
     DOWNLOADING = 1
     DOWNLOADED = 2

@@ -7,7 +7,7 @@ import os
 
 class Log:
     @staticmethod
-    def logging_init(path="../config/logging.ini", def_level=logging.INFO):
+    def logging_init(path="./config/logging.ini", def_level=logging.INFO):
         if os.path.exists(path):
             logging.config.fileConfig(path)
         else:

@@ -18,7 +18,7 @@ from wh.core.pic_status import ImageStatus
 from wh.db.wh_db_handler import WhDbHandler
 from wh.meta.image_meta import ImageMeta
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger('wh')
 
 
 class WhPicManager:
@@ -45,9 +45,9 @@ class WhPicManager:
         url = ConfigManager.get_wh_query_images_api()
         params = {
             "categories": "111",
-            "purity": "100",
-            "sorting": "date_added*",
-            "order": "desc*",
+            "purity": "111",
+            "sorting": "date_added",
+            "order": "desc",
             "apikey": self.api_key
         }
         headers = {}
@@ -113,10 +113,13 @@ class WhPicManager:
 
         image_actual_no_need_dld = 0
         for image in images:
+            if image['purity'] != 'nsfw' and image['purity'] != 'sketchy':
+                continue
             # 检查图片是否存在
             image_name = image['id'] + self.get_pic_suffix(image['file_type'])
 
-            image_full_path = os.path.join(download_path, image['category'], image['purity'], Utils.get_year_and_month_from_str(image['created_at']))
+            image_full_path = os.path.join(download_path, image['category'], image['purity'],
+                                           Utils.get_year_and_month_from_str(image['created_at']))
             if not os.path.exists(image_full_path):
                 os.makedirs(image_full_path, exist_ok=True)
             image_name_full_path = os.path.join(image_full_path, image_name)
@@ -129,49 +132,51 @@ class WhPicManager:
                 image_actual_no_need_dld += 1
                 continue
 
-            response = None
-            with requests.Session() as session:
-                retries = Retry(
-                    total=10,
-                    backoff_factor=0.5,
-                    backoff_max=300,
-                    status_forcelist=[429, 500, 503])
-                session.mount(image['path'], HTTPAdapter(max_retries=retries))
+            response = await self.download_one_image(image['path'])
+            if response is None:
+                continue
 
-                response = None
-                try:
-                    response = session.get(
-                        image['path'],
-                        verify=True,
-                        timeout=(3, 10),
-                        headers={
-                            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                            'accept-encoding': 'gzip, deflate, br',
-                            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
-                        },
-                        proxies=ConfigManager.get_proxy_config(),
-                    )
-                except Timeout as tx:
-                    LOGGER.warning("http timeout.", tx)
-                except RetryError as rx:
-                    LOGGER.warning("retry error.", rx)
-                except BaseException as bx:
-                    LOGGER.warning("unexpect error.", bx)
-
-                if response is None:
-                    continue
-
-                if response.status_code == 200:
-                    with open(image_name_full_path, 'wb') as f:
-                        f.write(response.content)
-                    await self.db_handler.update_image_status(image, ImageStatus.DOWNLOADED)
-                if response.status_code == 404:
-                    await self.db_handler.update_image_status(image, ImageStatus.NOTFOUND)
-                    LOGGER.warning("image not found. img:{}".format(image_name))
-                    image_actual_no_need_dld += 1
+            LOGGER.info("downloading image:%s", image['path'])
+            if response.status_code == 200:
+                with open(image_name_full_path, 'wb') as f:
+                    f.write(response.content)
+                await self.db_handler.update_image_status(image, ImageStatus.DOWNLOADED)
+            if response.status_code == 404:
+                await self.db_handler.update_image_status(image, ImageStatus.NOTFOUND)
+                LOGGER.warning("image not found. img:{}".format(image_name))
+                image_actual_no_need_dld += 1
         else:
             return image_actual_no_need_dld == len(images)
 
+    async def download_one_image(self, url):
+        response = None
+        with requests.Session() as session:
+            retries = Retry(
+                total=10,
+                backoff_factor=0.5,
+                backoff_max=300,
+                status_forcelist=[429, 500, 503])
+            session.mount(url, HTTPAdapter(max_retries=retries))
+
+            try:
+                response = session.get(
+                    url,
+                    verify=True,
+                    timeout=(3, 10),
+                    headers={
+                        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                        'accept-encoding': 'gzip, deflate, br',
+                        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+                    },
+                    proxies=ConfigManager.get_proxy_config(),
+                )
+            except Timeout as tx:
+                LOGGER.warning("http timeout.", tx)
+            except RetryError as rx:
+                LOGGER.warning("retry error.", rx)
+            except BaseException as bx:
+                LOGGER.warning("unexpect error.", bx)
+        return response
 
     def get_pic_suffix(self, extension):
         if extension is None:
@@ -185,9 +190,39 @@ class WhPicManager:
             LOGGER.warning("pic suffix is not support. ", extension)
             return '.jpg'
 
-
-    def backup_full_scan_and_download(self):
+    async def backup_full_scan_and_download(self):
         """
         读取数据库中没有下载的链接并下载
         :return:
         """
+        LOGGER.info("begin to execute backup_full_scan_and_download")
+        condition = {
+            "OR": [
+                {"purity": "nsfw"},
+                {"purity": "sketchy"}
+            ]
+        }
+        take = 500
+        skip = 0
+        while True:
+            images = await self.db_handler.list_images_by_date(condition, take, skip)
+            if images is None or len(images) == 0:
+                break
+
+            for image in images:
+                if image.status != ImageStatus.INITIAL and image.status != ImageStatus.DOWNLOADING:
+                    continue
+
+                LOGGER.info("downloading image:%s, path:%s", image.id, image.path)
+                response = await self.download_one_image(image.path)
+                if response is None:
+                    continue
+
+                LOGGER.info("downloading image:%s, path:%s success", image.id, image.path)
+
+                if response.status_code == 200:
+                    await self.db_handler.update_image_status(image, ImageStatus.DOWNLOADED)
+                elif response.status_code == 404:
+                    await self.db_handler.update_image_status(image, ImageStatus.NOTFOUND)
+            else:
+                skip += len(images)
