@@ -15,12 +15,14 @@ async def main() -> None:
     manager = WhPicManager()
     await manager.connect()
     await manager.get_ims_sorting_by_date_api(is_stop_auto=True, is_download=True)
+    await manager.release()
 
 
 async def main2() -> None:
     manager = WhPicManager()
     await manager.connect()
     await manager.backup_full_scan_and_download()
+    await manager.release()
 
 if __name__ == "__main__":
     asyncio.run(main())
