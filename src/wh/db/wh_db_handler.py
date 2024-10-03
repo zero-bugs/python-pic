@@ -152,7 +152,7 @@ class WhDbHandler:
                 "status": status
             },
             where={
-                "id": image['id']
+                "id": image.id
             }
         )
 

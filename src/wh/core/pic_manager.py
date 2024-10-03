@@ -13,6 +13,7 @@ from urllib3 import Retry
 
 from common.http.http_utils import HttpUtils
 from common.config.config_manager import ConfigManager
+from common.log.log_print import LogUtils
 from common.utils.utils import Utils
 from wh.core.pic_status import ImageStatus
 from wh.db.wh_db_handler import WhDbHandler
@@ -225,7 +226,11 @@ class WhPicManager:
 
                 if response.status_code == 200:
                     await self.db_handler.update_image_status(image, ImageStatus.DOWNLOADED)
+                    LOGGER.info("update image:%s, status:%s", image.id, ImageStatus.DOWNLOADED)
+                    # pass
                 elif response.status_code == 404:
                     await self.db_handler.update_image_status(image, ImageStatus.NOTFOUND)
+                    LOGGER.info("update image:%s, status:%s", image.id, ImageStatus.NOTFOUND)
+                    # pass
             else:
                 skip += len(images)

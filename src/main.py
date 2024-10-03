@@ -3,11 +3,11 @@
 import asyncio
 import os
 
-from common.log.log_print import Log
+from common.log.log_print import LogUtils
 from wh.core.pic_manager import WhPicManager
 
 # 日志初始化
-Log.logging_init()
+LogUtils.logging_init()
 
 os.environ['NO_PROXY'] = 'localhost'
 
@@ -25,4 +25,5 @@ async def main2() -> None:
     await manager.release()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
+    asyncio.run(main2())
