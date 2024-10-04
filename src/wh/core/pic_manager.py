@@ -13,7 +13,6 @@ from urllib3 import Retry
 
 from common.http.http_utils import HttpUtils
 from common.config.config_manager import ConfigManager
-from common.log.log_print import LogUtils
 from common.utils.utils import Utils
 from wh.core.pic_status import ImageStatus
 from wh.db.wh_db_handler import WhDbHandler
@@ -107,10 +106,7 @@ class WhPicManager:
         if images is None:
             return False
 
-        download_path = str(os.path.join(ConfigManager.get_output_dir(), ConfigManager.get_type()))
-        # 检查路径是否存在
-        if not os.path.exists(download_path):
-            os.makedirs(download_path, exist_ok=True)
+        download_path = await self.get_download_root_path()
 
         image_actual_no_need_dld = 0
         for image in images:
@@ -118,13 +114,7 @@ class WhPicManager:
                 image_actual_no_need_dld += 1
                 continue
             # 检查图片是否存在
-            image_name = image['id'] + self.get_pic_suffix(image['file_type'])
-
-            image_full_path = os.path.join(download_path, image['category'], image['purity'],
-                                           Utils.get_year_and_month_from_str(image['created_at']))
-            if not os.path.exists(image_full_path):
-                os.makedirs(image_full_path, exist_ok=True)
-            image_name_full_path = os.path.join(image_full_path, image_name)
+            image_name, image_name_full_path = self.get_image_full_path_dict(download_path, image)
             if os.path.exists(image_name_full_path):
                 image_actual_no_need_dld += 1
                 continue
@@ -206,8 +196,9 @@ class WhPicManager:
                 {"purity": "sketchy"}
             ]
         }
-        take = 500
+        take = 5000
         skip = 0
+        download_path = await self.get_download_root_path()
         while True:
             images = await self.db_handler.list_images_by_date(condition, take, skip)
             if images is None or len(images) == 0:
@@ -225,6 +216,11 @@ class WhPicManager:
                 LOGGER.info("downloading image:%s, path:%s success", image.id, image.path)
 
                 if response.status_code == 200:
+                    _, image_name_full_path = self.get_image_full_name_obj(download_path, image)
+                    if not os.path.exists(image_name_full_path):
+                        with open(image_name_full_path, 'wb') as f:
+                            f.write(response.content)
+                        LOGGER.info("write image:%s local, path:%s success", image.id, image.path)
                     await self.db_handler.update_image_status(image, ImageStatus.DOWNLOADED)
                     LOGGER.info("update image:%s, status:%s", image.id, ImageStatus.DOWNLOADED)
                     # pass
@@ -234,3 +230,28 @@ class WhPicManager:
                     # pass
             else:
                 skip += len(images)
+
+    def get_image_full_path_dict(self, download_path, image):
+        image_name = image['id'] + self.get_pic_suffix(image['file_type'])
+        image_full_path = str(os.path.join(download_path, image['category'], image['purity'],
+                                           Utils.get_year_and_month_from_str(image['created_at'])))
+        if not os.path.exists(image_full_path):
+            os.makedirs(image_full_path, exist_ok=True)
+        image_name_full_path = os.path.join(image_full_path, image_name)
+        return image_name, image_name_full_path
+
+    def get_image_full_name_obj(self, download_path, image):
+        image_name = image.id + self.get_pic_suffix(image.file_type)
+        image_full_path = str(os.path.join(download_path, image.category, image.purity,
+                                           Utils.get_year_and_month_from_str(image.created_at)))
+        if not os.path.exists(image_full_path):
+            os.makedirs(image_full_path, exist_ok=True)
+        image_name_full_path = os.path.join(image_full_path, image_name)
+        return image_name, image_name_full_path
+
+    async def get_download_root_path(self):
+        download_path = str(os.path.join(ConfigManager.get_output_dir(), ConfigManager.get_type()))
+        # 检查路径是否存在
+        if not os.path.exists(download_path):
+            os.makedirs(download_path, exist_ok=True)
+        return download_path
