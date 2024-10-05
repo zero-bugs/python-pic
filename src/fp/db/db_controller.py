@@ -125,3 +125,13 @@ class FpDbController:
                 'name': 'asc'
             }
         )
+
+    async def update_inventory_status(self, inventory, status):
+        await InventoryTbl.prisma().update(
+            data={
+                "status": status
+            },
+            where={
+                "name": inventory.name
+            }
+        )

@@ -6,7 +6,6 @@
 # @Time        : 2024/10/5 20:39
 # @Description :
 """
-from asyncio import timeout
 
 from playwright.async_api import async_playwright
 
@@ -82,6 +81,8 @@ class FpPageManager:
             inventories = await self.db_handler.list_inventories_by_condition(condition, take, skip)
             if inventories is None or len(inventories) == 0:
                 break
+            skip += len(inventories)
+
             for inventory in inventories:
                 if inventory.status != LinkStatus.INITIAL:
                     continue
@@ -90,8 +91,12 @@ class FpPageManager:
                     await page.goto(current_url, timeout=600000)
                     articles = await page.query_selector_all('article')
                     for article in articles:
+                        LOGGER.info("begin to find article by url:%s", current_url)
                         article_id = await article.get_attribute('id')
                         url_element = await article.query_selector('.entry-title a')
+                        if url_element is None:
+                            await self.db_handler.update_inventory_status(inventory, LinkStatus.NOTFOUND)
+                            continue
                         url = await url_element.get_attribute('href')
                         title = await url_element.inner_text()
                         summary_element = await article.query_selector('.entry-content >> p')
@@ -125,11 +130,14 @@ class FpPageManager:
                         LOGGER.info("article page more one, name:%s, page:%s", inventory.name, current_url)
                     else:
                         break
+                await self.db_handler.update_inventory_status(inventory, LinkStatus.DONE)
+                LOGGER.info("update inventory name:%s status from %d to %d", inventory.name, inventory.status,
+                            LinkStatus.DONE)
             else:
                 if len(article_list) > 0:
                     await self.db_handler.batch_insert_table(article_list, article_list, list())
                     LOGGER.info("batch insert articles list count:%d", len(article_list))
                     article_list.clear()
-
-                # TODO 更新inventory表的status
-                # self.db_handler
+            # 关闭
+            await browser.close()
+            await playwright.stop()

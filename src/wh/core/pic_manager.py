@@ -203,6 +203,7 @@ class WhPicManager:
             images = await self.db_handler.list_images_by_date(condition, take, skip)
             if images is None or len(images) == 0:
                 break
+            skip += len(images)
 
             for image in images:
                 if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
@@ -223,13 +224,9 @@ class WhPicManager:
                         LOGGER.info("write image:%s local, path:%s success", image.id, image.path)
                     await self.db_handler.update_image_status(image, LinkStatus.DONE)
                     LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.DONE)
-                    # pass
                 elif response.status_code == 404:
                     await self.db_handler.update_image_status(image, LinkStatus.NOTFOUND)
                     LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.NOTFOUND)
-                    # pass
-            else:
-                skip += len(images)
 
     def get_image_full_path_dict(self, download_path, image):
         image_name = image['id'] + self.get_pic_suffix(image['file_type'])
