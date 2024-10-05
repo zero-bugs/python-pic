@@ -10,7 +10,7 @@ class LogUtils:
         "formatters": {
             "root_fmt": {
                 "format": "%(asctime)s-%(name)s-%(levelname)s-line %(lineno)d-%(message)s",
-                "datefmt":"%Y-%m-%dT%H:%M:%S%z"
+                "datefmt": "%Y-%m-%dT%H:%M:%S%z"
             },
         },
         "handlers": {

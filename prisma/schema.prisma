@@ -6,7 +6,7 @@
 
 datasource db {
   provider = "sqlite"
-  url      = "file:../db/wh.db"
+  url      = "file:../db/fp.db"
 }
 
 // generator
@@ -17,6 +17,8 @@ generator client {
 }
 
 // data models
+
+// wh.schema.prisma
 // status 0-init; 1-todo; 2-doing; 3-done
 model WhImage {
   id          String       @unique
@@ -51,4 +53,29 @@ model Tag {
 model Uploader {
   username String           @unique
   group    String
+}
+
+// fp.schema.prisma
+// status 0-init; 1-todo; 2-doing; 3-done
+model InventoryTbl {
+    name        String         @unique
+    url         String
+    status      Int            @default(0)
+}
+
+model ArticleTbl {
+  article_id    String         @unique
+  name          String
+  title         String
+  url           String
+  summary       String
+  created_at    String
+  status        Int            @default(0)
+}
+
+model ImageTbl {
+  url            String        @unique
+  article_id     String
+  summary        String?
+  status         Int           @default(0)
 }

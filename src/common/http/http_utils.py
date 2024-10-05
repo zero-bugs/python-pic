@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-import json
 import logging
-import os
 
 import requests
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import Timeout, RetryError
 
 from common.config.config_manager import ConfigManager
-from wh.meta.image_meta import ImageMeta
-from wh.meta.uploader_meta import UploaderMeta
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,5 +57,3 @@ class HttpUtils:
             return result
 
         return response.json()
-
-

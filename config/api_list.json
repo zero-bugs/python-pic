@@ -1,0 +1,36 @@
+{
+  "wh": {
+    "protocol": "https",
+    "host": "wallhaven.cc",
+    "help": "https://wallhaven.cc/help/api",
+    "email": "wallhavendotcc@gmail.com",
+    "QUERY_LIST_IMAGES": {
+      "apiId": "QUERY_LIST_IMAGES",
+      "desc": "Searching and listings",
+      "uri": "/api/v1/search",
+      "method": "GET"
+    },
+    "QUERY_SINGLE_IMAGE_INFO": {
+      "desc": "Accessing Wallpaper information",
+      "uri": "/api/v1/w/{}",
+      "method": "GET"
+    },
+    "QUERY_SINGLE_IMAGE_TAG": {
+      "desc": "Accessing Tag info",
+      "uri": "/api/v1/tag/{}",
+      "method": "GET"
+    }
+  },
+  "fp": {
+    "protocol": "https",
+    "host": "thefappening.pro/",
+    "help": "https://thefappening.pro/contacts/",
+    "email": "thefappening.pro@gmail.com",
+    "ALL_ACTRESSES_LIST": {
+      "apiId": "ALL_ACTRESSES_LIST",
+      "desc": "Searching and listings",
+      "uri": "/all-actresses-list/",
+      "method": "GET"
+    }
+  }
+}

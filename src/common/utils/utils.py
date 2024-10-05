@@ -33,7 +33,6 @@ class Utils:
     def get_datetime_from_str(date_str: str):
         return datetime.strptime(date_str, Utils.TIME_FORMAT)
 
-
     @staticmethod
     def get_year_and_month_from_str(date_str: str):
         return datetime.strftime(datetime.strptime(date_str, Utils.TIME_FORMAT), '%Y-%m')

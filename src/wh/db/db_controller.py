@@ -8,19 +8,7 @@ from prisma.models import WhImage, Uploader, Tag
 
 LOGGER = logging.getLogger('common')
 
-
-def is_need_update(table, entry, result):
-    if table.__name__ == 'WhImage':
-        return entry["created_at"] != result.created_at
-    elif table.__name__ == 'Tag':
-        return entry["created_at"] != result.created_at
-    elif table.__name__ == 'Uploader':
-        return entry["username"] != result.username or entry["group"] != result.group
-    else:
-        LOGGER.warning("invalid input table", table)
-
-
-class WhDbHandler:
+class WhDbController:
     def __init__(self):
         self.prisma = Prisma(auto_register=True)
 
@@ -30,8 +18,8 @@ class WhDbHandler:
     async def release(self):
         await self.prisma.disconnect()
 
-    async def batch_insert_images(self, images: list[dict[str, Any]], tags: list[dict[str, Any]],
-                                  uploader: list[dict[str, Any]]):
+    async def batch_insert_table(self, images: list[dict[str, Any]], tags: list[dict[str, Any]],
+                                 uploader: list[dict[str, Any]]):
         """
         插入图片，处理冲突。
         :param uploader:
@@ -116,7 +104,7 @@ class WhDbHandler:
             if result is None:
                 create_entries.append(entry)
             else:
-                if is_need_update(table, entry, result):
+                if WhDbController.is_need_update(table, entry, result):
                     update_entries.append(entry)
         return create_entries, update_entries
 
@@ -168,4 +156,14 @@ class WhDbHandler:
                 'created_at': 'desc'
             }
         )
-       
+
+    @staticmethod
+    def is_need_update(table, entry, result):
+        if table.__name__ == 'WhImage':
+            return entry["created_at"] != result.created_at
+        elif table.__name__ == 'Tag':
+            return entry["created_at"] != result.created_at
+        elif table.__name__ == 'Uploader':
+            return entry["username"] != result.username or entry["group"] != result.group
+        else:
+            LOGGER.warning("invalid input table", table)

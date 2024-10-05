@@ -11,11 +11,11 @@ from requests.adapters import HTTPAdapter
 from requests.exceptions import RetryError
 from urllib3 import Retry
 
-from common.http.http_utils import HttpUtils
 from common.config.config_manager import ConfigManager
+from common.http.http_utils import HttpUtils
 from common.utils.utils import Utils
-from wh.core.pic_status import ImageStatus
-from wh.db.wh_db_handler import WhDbHandler
+from common.config.link_status import LinkStatus
+from wh.db.db_controller import WhDbController
 from wh.meta.image_meta import ImageMeta
 
 LOGGER = logging.getLogger('wh')
@@ -23,7 +23,7 @@ LOGGER = logging.getLogger('wh')
 
 class WhPicManager:
     def __init__(self):
-        self.db_handler = WhDbHandler()
+        self.db_handler = WhDbController()
         self.api_key = ConfigManager.get_api_key()
 
     async def connect(self):
@@ -64,7 +64,7 @@ class WhPicManager:
             per_page = meta['per_page']
 
         images = self.get_images_from_resp(data)
-        await self.db_handler.batch_insert_images(images, list(), list())
+        await self.db_handler.batch_insert_table(images, list(), list())
         if is_download:
             await self.download_wh_images(images)
 
@@ -77,7 +77,7 @@ class WhPicManager:
             data = result['data']
 
             images = self.get_images_from_resp(data)
-            await self.db_handler.batch_insert_images(images, list(), list())
+            await self.db_handler.batch_insert_table(images, list(), list())
             if is_download:
                 download_result = await self.download_wh_images(images)
 
@@ -120,7 +120,7 @@ class WhPicManager:
                 continue
 
             result = await self.db_handler.find_one_entry(WhImage, image['id'])
-            if result is None or result.status != ImageStatus.INITIAL:
+            if result is None or result.status != LinkStatus.INITIAL:
                 image_actual_no_need_dld += 1
                 continue
 
@@ -133,9 +133,9 @@ class WhPicManager:
             if response.status_code == 200:
                 with open(image_name_full_path, 'wb') as f:
                     f.write(response.content)
-                await self.db_handler.update_image_status(image, ImageStatus.DOWNLOADED)
+                await self.db_handler.update_image_status(image, LinkStatus.DONE)
             if response.status_code == 404:
-                await self.db_handler.update_image_status(image, ImageStatus.NOTFOUND)
+                await self.db_handler.update_image_status(image, LinkStatus.NOTFOUND)
                 LOGGER.warning("image not found. img:{}".format(image_name))
                 image_actual_no_need_dld += 1
         else:
@@ -205,7 +205,7 @@ class WhPicManager:
                 break
 
             for image in images:
-                if image.status != ImageStatus.INITIAL and image.status != ImageStatus.DOWNLOADING:
+                if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
                     continue
 
                 LOGGER.info("downloading image:%s, path:%s", image.id, image.path)
@@ -221,12 +221,12 @@ class WhPicManager:
                         with open(image_name_full_path, 'wb') as f:
                             f.write(response.content)
                         LOGGER.info("write image:%s local, path:%s success", image.id, image.path)
-                    await self.db_handler.update_image_status(image, ImageStatus.DOWNLOADED)
-                    LOGGER.info("update image:%s, status:%s", image.id, ImageStatus.DOWNLOADED)
+                    await self.db_handler.update_image_status(image, LinkStatus.DONE)
+                    LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.DONE)
                     # pass
                 elif response.status_code == 404:
-                    await self.db_handler.update_image_status(image, ImageStatus.NOTFOUND)
-                    LOGGER.info("update image:%s, status:%s", image.id, ImageStatus.NOTFOUND)
+                    await self.db_handler.update_image_status(image, LinkStatus.NOTFOUND)
+                    LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.NOTFOUND)
                     # pass
             else:
                 skip += len(images)
