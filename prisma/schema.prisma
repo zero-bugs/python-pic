@@ -76,6 +76,7 @@ model ArticleTbl {
 model ImageTbl {
   url            String        @unique
   article_id     String
+  type           String        @default("img")
   summary        String?
   status         Int           @default(0)
 }

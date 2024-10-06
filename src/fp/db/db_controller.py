@@ -7,12 +7,13 @@
 # @Description :
 """
 import logging
+from enum import unique
 from typing import Any
 
 from prisma import Prisma
 from prisma.models import InventoryTbl, ArticleTbl, ImageTbl
 
-LOGGER = logging.getLogger('common')
+LOGGER = logging.getLogger('fp')
 
 class FpDbController:
     def __init__(self):
@@ -39,7 +40,7 @@ class FpDbController:
 
         inv_create_list, inv_update_list = await self.handle_unique_insert(InventoryTbl, inventories)
         article_create_list, article_update_list = await self.handle_unique_insert(ArticleTbl, articles)
-        img_create_list, inv_update_list = await self.handle_unique_insert(ImageTbl, images)
+        img_create_list, img_update_list = await self.handle_unique_insert(ImageTbl, images)
 
         async with self.prisma.tx() as transaction:
             await InventoryTbl.prisma(transaction).create_many(
@@ -70,7 +71,7 @@ class FpDbController:
                     }
                 )
 
-            for value in inv_update_list:
+            for value in img_update_list:
                 await ImageTbl.prisma(transaction).update(
                     data=value,
                     where={
@@ -83,6 +84,26 @@ class FpDbController:
         update_entries = list()
         if entries is None:
             return create_entries, update_entries
+
+        # 去重
+        unique_entries = []
+        unique_set = set()
+        if table.__name__ == 'InventoryTbl':
+            for entry in entries:
+                if entry['name'] not in unique_set:
+                    unique_set.add(entry['name'])
+                    unique_entries.append(entry)
+        elif table.__name__ == 'ArticleTbl':
+            for entry in entries:
+                if entry['article_id'] not in unique_set:
+                    unique_set.add(entry['article_id'])
+                    unique_entries.append(entry)
+        elif table.__name__ == 'ImageTbl':
+            for entry in entries:
+                if entry['url'] not in unique_set:
+                    unique_set.add(entry['url'])
+                    unique_entries.append(entry)
+        entries = unique_entries
 
         for entry in entries:
             result = None
@@ -133,5 +154,28 @@ class FpDbController:
             },
             where={
                 "name": inventory.name
+            }
+        )
+
+    async def list_article_by_condition(self, condition, take, skip):
+        if condition is None:
+            condition = {}
+
+        return await ArticleTbl.prisma().find_many(
+            take=take,
+            skip=skip,
+            where=condition,
+            order={
+                'name': 'asc'
+            }
+        )
+
+    async def update_article_status(self, inventory, status):
+        await ArticleTbl.prisma().update(
+            data={
+                "status": status
+            },
+            where={
+                "article_id": inventory.article_id
             }
         )

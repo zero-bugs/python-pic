@@ -9,7 +9,7 @@ class LogUtils:
         "version": 1,
         "formatters": {
             "root_fmt": {
-                "format": "%(asctime)s-%(name)s-%(levelname)s-line %(lineno)d-%(message)s",
+                "format": "[%(asctime)s][%(name)s][%(levelname)s][line %(lineno)d]%(message)s",
                 "datefmt": "%Y-%m-%dT%H:%M:%S%z"
             },
         },
@@ -21,7 +21,7 @@ class LogUtils:
             },
         },
         "root": {
-            "level": "DEBUG",
+            "level": "WARNING",
             "handlers": ["root_handler"],
         },
     }
@@ -30,7 +30,7 @@ class LogUtils:
         "version": 1,
         "formatters": {
             "standard_fmt": {
-                "format": "%(asctime)s-%(name)s-%(levelname)s-line %(lineno)d-%(message)s",
+                "format": "[%(asctime)s][%(name)s][%(levelname)s][line %(lineno)d]%(message)s",
                 "datefmt": "%Y-%m-%dT%H:%M:%S%z"
             },
         },
@@ -56,6 +56,10 @@ class LogUtils:
                 "handlers": ["console", "file"],
             },
             "wh": {
+                "level": "DEBUG",
+                "handlers": ["console", "file"],
+            },
+            "fp": {
                 "level": "DEBUG",
                 "handlers": ["console", "file"],
             },

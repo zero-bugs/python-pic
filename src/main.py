@@ -29,7 +29,9 @@ async def main2() -> None:
 async def main3() -> None:
     manager = FpPageManager()
     await manager.connect()
+    await manager.get_all_actresses_list()
     await manager.get_all_actresses_list_by_inventory()
+    await manager.get_all_resources_list_by_article()
     await manager.release()
 
 
