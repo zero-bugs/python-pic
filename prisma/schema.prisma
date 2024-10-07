@@ -6,7 +6,7 @@
 
 datasource db {
   provider = "sqlite"
-  url      = "file:../db/fp.db"
+  url      = "file:../db/wh.db"
 }
 
 // generator
