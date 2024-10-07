@@ -36,5 +36,5 @@ async def main3() -> None:
 
 
 if __name__ == "__main__":
-    # asyncio.run(main())
-    asyncio.run(main3())
+    asyncio.run(main())
+    # asyncio.run(main3())

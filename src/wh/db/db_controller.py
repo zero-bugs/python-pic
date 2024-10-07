@@ -134,7 +134,17 @@ class WhDbController:
             LOGGER.warning("invalid input table", table)
             return None
 
-    async def update_image_status(self, image, status):
+    async def update_image_status_for_dict(self, image, status):
+        await WhImage.prisma().update(
+            data={
+                "status": status
+            },
+            where={
+                "id": image['id']
+            }
+        )
+
+    async def update_image_status_for_obj(self, image, status):
         await WhImage.prisma().update(
             data={
                 "status": status

@@ -133,9 +133,9 @@ class WhPicManager:
             if response.status_code == 200:
                 with open(image_name_full_path, 'wb') as f:
                     f.write(response.content)
-                await self.db_handler.update_image_status(image, LinkStatus.DONE)
+                await self.db_handler.update_image_status_for_dict(image, LinkStatus.DONE)
             if response.status_code == 404:
-                await self.db_handler.update_image_status(image, LinkStatus.NOTFOUND)
+                await self.db_handler.update_image_status_for_dict(image, LinkStatus.NOTFOUND)
                 LOGGER.warning("image not found. img:{}".format(image_name))
                 image_actual_no_need_dld += 1
         else:
@@ -222,10 +222,10 @@ class WhPicManager:
                         with open(image_name_full_path, 'wb') as f:
                             f.write(response.content)
                         LOGGER.info("write image:%s local, path:%s success", image.id, image.path)
-                    await self.db_handler.update_image_status(image, LinkStatus.DONE)
+                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.DONE)
                     LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.DONE)
                 elif response.status_code == 404:
-                    await self.db_handler.update_image_status(image, LinkStatus.NOTFOUND)
+                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.NOTFOUND)
                     LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.NOTFOUND)
 
     def get_image_full_path_dict(self, download_path, image):
