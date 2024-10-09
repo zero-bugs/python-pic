@@ -4,17 +4,12 @@ import logging
 import os
 import time
 
-import requests
 from prisma.models import WhImage
-from requests import Timeout
-from requests.adapters import HTTPAdapter
-from requests.exceptions import RetryError
-from urllib3 import Retry
 
 from common.config.config_manager import ConfigManager
+from common.config.link_status import LinkStatus
 from common.http.http_utils import HttpUtils
 from common.utils.utils import Utils
-from common.config.link_status import LinkStatus
 from wh.db.db_controller import WhDbController
 from wh.meta.image_meta import ImageMeta
 
@@ -52,7 +47,7 @@ class WhPicManager:
         }
         headers = {}
 
-        result = HttpUtils.fetch_with_retry(url, params=params, headers=headers)
+        result = HttpUtils.fetch_with_retry_json(url, params=params, headers=headers)
         meta = result['meta']
         data = result['data']
 
@@ -73,7 +68,7 @@ class WhPicManager:
             current_page += 1
             params['page'] = current_page
 
-            result = HttpUtils.fetch_with_retry(url, params=params, headers=headers)
+            result = HttpUtils.fetch_with_retry_json(url, params=params, headers=headers)
             data = result['data']
 
             images = self.get_images_from_resp(data)
@@ -106,7 +101,7 @@ class WhPicManager:
         if images is None:
             return False
 
-        download_path = await self.get_download_root_path()
+        download_path = WhPicManager.get_download_root_path()
 
         image_actual_no_need_dld = 0
         for image in images:
@@ -124,9 +119,10 @@ class WhPicManager:
                 image_actual_no_need_dld += 1
                 continue
 
-            response = await self.download_one_image(image['path'])
+            status, response = HttpUtils.fetch_with_retry_binary(image['path'])
             if response is None:
                 image_actual_no_need_dld += 1
+                await self.db_handler.update_image_status_for_obj(image, status)
                 continue
 
             LOGGER.info("downloading image:%s", image['path'])
@@ -142,36 +138,6 @@ class WhPicManager:
             LOGGER.info("downloaded:%d and list:%d", image_actual_no_need_dld, len(images))
             return image_actual_no_need_dld == len(images)
 
-    async def download_one_image(self, url):
-        response = None
-        with requests.Session() as session:
-            retries = Retry(
-                total=10,
-                backoff_factor=0.5,
-                backoff_max=300,
-                status_forcelist=[429, 500, 503])
-            session.mount(url, HTTPAdapter(max_retries=retries))
-
-            try:
-                response = session.get(
-                    url,
-                    verify=True,
-                    timeout=(3, 10),
-                    headers={
-                        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                        'accept-encoding': 'gzip, deflate, br',
-                        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
-                    },
-                    proxies=ConfigManager.get_proxy_config(),
-                )
-            except Timeout as tx:
-                LOGGER.warning("http timeout.", tx)
-            except RetryError as rx:
-                LOGGER.warning("retry error.", rx)
-            except BaseException as bx:
-                LOGGER.warning("unexpect error.", bx)
-        return response
-
     def get_pic_suffix(self, extension):
         if extension is None:
             return ".jpg"
@@ -184,7 +150,7 @@ class WhPicManager:
             LOGGER.warning("pic suffix is not support. ", extension)
             return '.jpg'
 
-    async def backup_full_scan_and_download(self):
+    async def background_full_scan_and_download(self):
         """
         读取数据库中没有下载的链接并下载
         :return:
@@ -198,7 +164,7 @@ class WhPicManager:
         }
         take = 5000
         skip = 0
-        download_path = await self.get_download_root_path()
+        download_path = ConfigManager.get_download_root_path()
         while True:
             images = await self.db_handler.list_images_by_date(condition, take, skip)
             if images is None or len(images) == 0:
@@ -210,8 +176,9 @@ class WhPicManager:
                     continue
 
                 LOGGER.info("downloading image:%s, path:%s", image.id, image.path)
-                response = await self.download_one_image(image.path)
+                status, response = HttpUtils.fetch_with_retry_binary(image.path)
                 if response is None:
+                    await self.db_handler.update_image_status_for_obj(image, status)
                     continue
 
                 LOGGER.info("downloading image:%s, path:%s success", image.id, image.path)
@@ -245,10 +212,3 @@ class WhPicManager:
             os.makedirs(image_full_path, exist_ok=True)
         image_name_full_path = os.path.join(image_full_path, image_name)
         return image_name, image_name_full_path
-
-    async def get_download_root_path(self):
-        download_path = str(os.path.join(ConfigManager.get_output_dir(), ConfigManager.get_type()))
-        # 检查路径是否存在
-        if not os.path.exists(download_path):
-            os.makedirs(download_path, exist_ok=True)
-        return download_path

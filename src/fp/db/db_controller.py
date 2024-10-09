@@ -7,13 +7,13 @@
 # @Description :
 """
 import logging
-from enum import unique
 from typing import Any
 
 from prisma import Prisma
 from prisma.models import InventoryTbl, ArticleTbl, ImageTbl
 
 LOGGER = logging.getLogger('fp')
+
 
 class FpDbController:
     def __init__(self):
@@ -177,5 +177,34 @@ class FpDbController:
             },
             where={
                 "article_id": inventory.article_id
+            }
+        )
+
+    async def list_images(self, condition, take, skip):
+        if condition is None:
+            condition = {}
+
+        return await ImageTbl.prisma().find_many(
+            take=take,
+            skip=skip,
+            where=condition,
+            order={
+                'url': 'asc'
+            }
+        )
+
+    async def find_article_by_id(self, article_id):
+        return await ArticleTbl.prisma().find_first(
+            where={
+                "article_id": article_id
+            })
+
+    async def update_image_status_for_obj(self, image, status):
+        await ImageTbl.prisma().update(
+            data={
+                "status": status
+            },
+            where={
+                "url": image.url
             }
         )

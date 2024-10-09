@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+import os
+
 from common.utils.utils import Utils
 
 
@@ -58,3 +60,11 @@ class ConfigManager:
         host = wh_jconfig['host']
         uri = wh_jconfig['ALL_ACTRESSES_LIST']['uri']
         return "{}://{}{}".format(protocol, host, uri)
+
+    @staticmethod
+    def get_download_root_path():
+        download_path = str(os.path.join(ConfigManager.get_output_dir(), ConfigManager.get_type()))
+        # 检查路径是否存在
+        if not os.path.exists(download_path):
+            os.makedirs(download_path, exist_ok=True)
+        return download_path

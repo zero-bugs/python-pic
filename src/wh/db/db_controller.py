@@ -8,6 +8,7 @@ from prisma.models import WhImage, Uploader, Tag
 
 LOGGER = logging.getLogger('common')
 
+
 class WhDbController:
     def __init__(self):
         self.prisma = Prisma(auto_register=True)

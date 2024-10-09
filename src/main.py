@@ -23,8 +23,9 @@ async def main() -> None:
 async def main2() -> None:
     manager = WhPicManager()
     await manager.connect()
-    await manager.backup_full_scan_and_download()
+    await manager.background_full_scan_and_download()
     await manager.release()
+
 
 async def main3() -> None:
     manager = FpPageManager()
@@ -34,7 +35,14 @@ async def main3() -> None:
     await manager.get_all_resources_list_by_article()
     await manager.release()
 
+async def main4() -> None:
+    manager = FpPageManager()
+    await manager.connect()
+    await manager.download_all_resources_by_link()
+    await manager.release()
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
     # asyncio.run(main3())
+    asyncio.run(main4())

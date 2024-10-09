@@ -3,12 +3,14 @@
 import logging
 
 import requests
+from requests import ConnectTimeout, HTTPError
 from requests.adapters import HTTPAdapter, Retry
-from requests.exceptions import Timeout, RetryError
+from requests.exceptions import Timeout, RetryError, ProxyError, SSLError, ReadTimeout
 
 from common.config.config_manager import ConfigManager
+from common.config.link_status import LinkStatus
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger('common')
 
 
 class HttpUtils:
@@ -21,16 +23,22 @@ class HttpUtils:
         :param headers
         :return:
         """
-        result = {}
-
         response = None
+        status = LinkStatus.INITIAL
         with requests.Session() as session:
             retries = Retry(
-                total=10,
+                total=5,
                 backoff_factor=0.5,
-                backoff_max=300,
-                status_forcelist=[429, 500, 503])
+                backoff_max=60,
+                status_forcelist=[429, 500, 502, 503, 504])
             session.mount(url, HTTPAdapter(max_retries=retries))
+
+            if headers is None or headers is {}:
+                headers = {
+                        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                        'accept-encoding': 'gzip, deflate, br',
+                        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+                    },
 
             try:
                 response = session.get(
@@ -41,15 +49,37 @@ class HttpUtils:
                     headers=headers,
                     proxies=ConfigManager.get_proxy_config(),
                 )
+            except HTTPError as he:
+                LOGGER.error("http error.", he)
+            except ConnectTimeout as ce:
+                LOGGER.warning("url:{} not arrived. error:".format(url), ce)
+                status = LinkStatus.UNREACHABLE
+            except ReadTimeout as re:
+                LOGGER.warning("read timeout.", re)
+                status = LinkStatus.UNREACHABLE
             except Timeout as tx:
                 LOGGER.warning("http timeout.", tx)
+                status = LinkStatus.UNREACHABLE
+            except ProxyError as rx:
+                LOGGER.warning("retry error.", rx)
+            except SSLError as se:
+                LOGGER.warning("SSL error.", se)
+                status = LinkStatus.UNREACHABLE
             except RetryError as rx:
                 LOGGER.warning("retry error.", rx)
             except BaseException as bx:
                 LOGGER.warning("unexpect error.", bx)
+                status = LinkStatus.UNREACHABLE
+        return status, response
 
+
+    @staticmethod
+    def fetch_with_retry_json(url: str, params: {}, headers: {}):
+        result = {}
+        _, response = HttpUtils.fetch_with_retry(url, params, headers)
         if response is None:
             LOGGER.warning("url:{} not arrived.".format(url))
+            return result
 
         if response.status_code != 200:
             LOGGER.warning("url:{} not arrived.".format(url))
@@ -57,3 +87,8 @@ class HttpUtils:
             return result
 
         return response.json()
+
+
+    @staticmethod
+    def fetch_with_retry_binary(url):
+        return HttpUtils.fetch_with_retry(url, {}, {})

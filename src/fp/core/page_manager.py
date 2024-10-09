@@ -7,15 +7,19 @@
 # @Description :
 """
 import logging
+import os
 
 from playwright.async_api import async_playwright
 
 from common.config.config_manager import ConfigManager
 from common.config.link_status import LinkStatus
+from common.http.http_utils import HttpUtils
+from common.utils.utils import Utils
 from fp.core.common import ResourceType
 from fp.db.db_controller import FpDbController
 
 LOGGER = logging.getLogger('fp')
+
 
 class FpPageManager:
     """
@@ -280,5 +284,69 @@ class FpPageManager:
                 LOGGER.warning("src:%s, srcset:%s not normal.element:%s can not split.", src, srcset, element)
         return url
 
+    async def download_all_resources_by_link(self):
+        """
+        根据image表中的link进行下载
+        :return:
+        """
+        LOGGER.info("begin to execute download_all_resources_by_link")
+        condition = {}
+        take = 200
+        skip = 0
+        download_path = ConfigManager.get_download_root_path()
+        while True:
+            images = await self.db_handler.list_images(condition, take, skip)
+            if images is None or len(images) == 0:
+                break
+            skip += len(images)
 
+            for image in images:
+                if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
+                    continue
 
+                LOGGER.info("downloading image:%s, article id:%s", image.url, image.article_id)
+                status, response = HttpUtils.fetch_with_retry_binary(image.url)
+                if response is None:
+                    await self.db_handler.update_image_status_for_obj(image, status)
+                    continue
+
+                LOGGER.info("downloading image:%s, path:%s success", image.article_id, image.url)
+
+                if response.status_code == 200:
+                    image_name_full_path = await self.get_image_full_name_obj(download_path, image)
+                    if not os.path.exists(image_name_full_path):
+                        LOGGER.info("write image:%s local, path:%s success", image.article_id, image_name_full_path)
+                        with open(image_name_full_path, 'wb') as f:
+                            f.write(response.content)
+                        LOGGER.info("write image:%s local, path:%s success", image.article_id, image_name_full_path)
+                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.DONE)
+                    LOGGER.info("update image:%s, status:%s", image.article_id, LinkStatus.DONE)
+                elif response.status_code == 404:
+                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.NOTFOUND)
+                    LOGGER.info("update image:%s, status:%s", image.article_id, LinkStatus.NOTFOUND)
+
+    async def get_image_full_name_obj(self, download_path, image):
+        url = image.url
+        if image.type == ResourceType.FP_IMAGE:
+            name = url.split('/')[-1]
+        elif image.type == ResourceType.FP_VIDEO:
+            name = url.split('?')[0].split('/')[-1]
+        else:
+            LOGGER.warning("unknown resource type:%s", image.type)
+            name = ""
+
+        # 找到article
+        article = await self.db_handler.find_article_by_id(image.article_id)
+        if article is None:
+            actress_name = "other"
+            title = "unknown"
+        else:
+            actress_name = Utils.standard_windows_path(article.name)
+            title = Utils.standard_windows_path(article.title)
+
+        path = str(os.path.join(download_path, actress_name, title))
+        if not os.path.exists(path):
+            os.makedirs(path)
+        full_path_name = os.path.join(path, name)
+        LOGGER.info("get full image path:%s", full_path_name)
+        return full_path_name

@@ -13,3 +13,4 @@ class LinkStatus:
     DOING = 1
     DONE = 2
     NOTFOUND = 3
+    UNREACHABLE = 4

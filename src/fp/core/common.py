@@ -7,6 +7,7 @@
 # @Description :
 """
 
+
 class ResourceType:
     FP_IMAGE = 'img'
     FP_VIDEO = 'video'
