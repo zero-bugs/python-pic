@@ -348,5 +348,5 @@ class FpPageManager:
         if not os.path.exists(path):
             os.makedirs(path)
         full_path_name = os.path.join(path, name)
-        LOGGER.info("get full image path:%s", full_path_name)
+        LOGGER.debug("get full image path:%s", full_path_name)
         return full_path_name

@@ -53,13 +53,13 @@ class HttpUtils:
                 LOGGER.error("http error.", he)
             except ConnectTimeout as ce:
                 LOGGER.warning("url:{} not arrived. error:".format(url), ce)
-                status = LinkStatus.UNREACHABLE
+                status = LinkStatus.DOING
             except ReadTimeout as re:
                 LOGGER.warning("read timeout.", re)
-                status = LinkStatus.UNREACHABLE
+                status = LinkStatus.DOING
             except Timeout as tx:
                 LOGGER.warning("http timeout.", tx)
-                status = LinkStatus.UNREACHABLE
+                status = LinkStatus.DOING
             except ProxyError as rx:
                 LOGGER.warning("retry error.", rx)
             except SSLError as se:
