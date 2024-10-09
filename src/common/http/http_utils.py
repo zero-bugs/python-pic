@@ -28,7 +28,7 @@ class HttpUtils:
         with requests.Session() as session:
             retries = Retry(
                 total=5,
-                backoff_factor=0.5,
+                backoff_factor=1,
                 backoff_max=60,
                 status_forcelist=[429, 500, 502, 503, 504])
             session.mount(url, HTTPAdapter(max_retries=retries))
@@ -51,22 +51,24 @@ class HttpUtils:
                 )
             except HTTPError as he:
                 LOGGER.error("http error.", he)
-            except ConnectTimeout as ce:
-                LOGGER.warning("url:{} not arrived. error:".format(url), ce)
-                status = LinkStatus.DOING
-            except ReadTimeout as re:
-                LOGGER.warning("read timeout.", re)
-                status = LinkStatus.DOING
-            except Timeout as tx:
-                LOGGER.warning("http timeout.", tx)
-                status = LinkStatus.DOING
+            # except ConnectTimeout as ce:
+            #     LOGGER.warning("url:{} not arrived. error:".format(url), ce)
+            #     status = LinkStatus.DOING
+            # except ReadTimeout as re:
+            #     LOGGER.warning("read timeout.", re)
+            #     status = LinkStatus.DOING
+            # except Timeout as tx:
+            #     LOGGER.warning("http timeout.", tx)
+            #     status = LinkStatus.DOING
             except ProxyError as rx:
-                LOGGER.warning("retry error.", rx)
+                LOGGER.warning("proxy error.", rx)
+                status = LinkStatus.DOING
             except SSLError as se:
                 LOGGER.warning("SSL error.", se)
                 status = LinkStatus.UNREACHABLE
             except RetryError as rx:
                 LOGGER.warning("retry error.", rx)
+                status = LinkStatus.UNREACHABLE
             except BaseException as bx:
                 LOGGER.warning("unexpect error.", bx)
                 status = LinkStatus.UNREACHABLE
