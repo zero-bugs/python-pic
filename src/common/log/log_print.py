@@ -53,15 +53,15 @@ class LogUtils:
         "loggers": {
             "common": {
                 "level": "INFO",
-                "handlers": ["console", "file"],
+                "handlers": ["file"],
             },
             "wh": {
                 "level": "DEBUG",
-                "handlers": ["console", "file"],
+                "handlers": ["file"],
             },
             "fp": {
                 "level": "DEBUG",
-                "handlers": ["console", "file"],
+                "handlers": ["file"],
             },
         }
     }

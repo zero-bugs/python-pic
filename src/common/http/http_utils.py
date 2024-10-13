@@ -3,9 +3,9 @@
 import logging
 
 import requests
-from requests import ConnectTimeout, HTTPError
+from requests import HTTPError
 from requests.adapters import HTTPAdapter, Retry
-from requests.exceptions import Timeout, RetryError, ProxyError, SSLError, ReadTimeout
+from requests.exceptions import RetryError, ProxyError, SSLError
 
 from common.config.config_manager import ConfigManager
 from common.config.link_status import LinkStatus
@@ -35,10 +35,10 @@ class HttpUtils:
 
             if headers is None or headers is {}:
                 headers = {
-                        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                        'accept-encoding': 'gzip, deflate, br',
-                        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
-                    },
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                    'accept-encoding': 'gzip, deflate, br',
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+                },
 
             try:
                 response = session.get(
@@ -74,7 +74,6 @@ class HttpUtils:
                 status = LinkStatus.UNREACHABLE
         return status, response
 
-
     @staticmethod
     def fetch_with_retry_json(url: str, params: {}, headers: {}):
         result = {}
@@ -89,7 +88,6 @@ class HttpUtils:
             return result
 
         return response.json()
-
 
     @staticmethod
     def fetch_with_retry_binary(url):

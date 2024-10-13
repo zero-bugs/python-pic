@@ -6,8 +6,11 @@
 # @Time        : 2024/10/5 20:39
 # @Description :
 """
+import asyncio
 import logging
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 from playwright.async_api import async_playwright
 
@@ -28,6 +31,11 @@ class FpPageManager:
 
     def __init__(self):
         self.db_handler = FpDbController()
+        # 并发执行数
+        self.concurrent_num = 5
+
+        # 线程池没批提交的任务数
+        self.batch_submit_num = 20
 
     async def connect(self):
         await self.db_handler.connect()
@@ -294,36 +302,42 @@ class FpPageManager:
         take = 200
         skip = 0
         download_path = ConfigManager.get_download_root_path()
-        while True:
-            images = await self.db_handler.list_images(condition, take, skip)
-            if images is None or len(images) == 0:
-                break
-            skip += len(images)
+        with ThreadPoolExecutor(max_workers=self.concurrent_num) as executor:
+            while True:
+                images_list = await self.db_handler.list_images(condition, take, skip)
+                if images_list is None or len(images_list) == 0:
+                    break
+                skip += len(images_list)
 
-            for image in images:
-                if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
+                images = []
+                for image in images_list:
+                    if image.status == LinkStatus.INITIAL or image.status == LinkStatus.DOING:
+                        images.append(image)
+                if len(images) == 0:
                     continue
 
-                LOGGER.info("downloading image:%s, article id:%s", image.url, image.article_id)
-                status, response = HttpUtils.fetch_with_retry_binary(image.url)
-                if response is None:
-                    await self.db_handler.update_image_status_for_obj(image, status)
-                    continue
+                while len(images) > 0:
+                    subtasks = []
+                    current_num = min(self.batch_submit_num, len(images))
+                    while len(subtasks) < current_num:
+                        img = images.pop(0)
+                        full_name = await self.get_image_full_name_obj(download_path, img)
+                        loop = asyncio.get_running_loop()
+                        subtasks.append(
+                            loop.run_in_executor(executor, self.download_one_image, img, full_name))
 
-                LOGGER.info("downloading image:%s, path:%s success", image.article_id, image.url)
-
-                if response.status_code == 200:
-                    image_name_full_path = await self.get_image_full_name_obj(download_path, image)
-                    if not os.path.exists(image_name_full_path):
-                        LOGGER.info("write image:%s local, path:%s success", image.article_id, image_name_full_path)
-                        with open(image_name_full_path, 'wb') as f:
-                            f.write(response.content)
-                        LOGGER.info("write image:%s local, path:%s success", image.article_id, image_name_full_path)
-                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.DONE)
-                    LOGGER.info("update image:%s, status:%s", image.article_id, LinkStatus.DONE)
-                elif response.status_code == 404:
-                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.NOTFOUND)
-                    LOGGER.info("update image:%s, status:%s", image.article_id, LinkStatus.NOTFOUND)
+                    start = time.time()
+                    LOGGER.info("begin to execute thread num:%d", len(subtasks))
+                    done = await asyncio.gather(*subtasks)
+                    LOGGER.info("end to execute thread num:%d, time:%f", len(subtasks), time.time() - start)
+                    for rs in done:
+                        status = rs[0]
+                        image = rs[1]
+                        if status != image.status:
+                            await self.db_handler.update_image_status_for_obj(image, status)
+                            LOGGER.info("update image url:%s, id:%s, status:%d", image.url, image.article_id,
+                                        LinkStatus.DONE)
+                    LOGGER.info("end to execute thread done num:%d", len(done))
 
     async def get_image_full_name_obj(self, download_path, image):
         url = image.url
@@ -350,3 +364,46 @@ class FpPageManager:
         full_path_name = os.path.join(path, name)
         LOGGER.debug("get full image path:%s", full_path_name)
         return full_path_name
+
+    def download_one_image(self, image, image_name_full_name):
+        """
+        多线程时，将同步IO封装在单独线程中
+        :param image: 图片
+        :param image_name_full_name: 图片全名字
+        :return:
+        """
+        status = image.status
+        if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
+            return status, image
+
+        LOGGER.info("downloading image:%s, article id:%s", image.url, image.article_id)
+        status, response = HttpUtils.fetch_with_retry_binary(image.url)
+        if response is None:
+            return status, image
+
+        LOGGER.info("downloading image:%s, path:%s success", image.url, image.article_id)
+
+        if response.status_code == 200:
+            if not os.path.exists(image_name_full_name):
+                LOGGER.info("write image:%s local, path:%s success", image.url, image_name_full_name)
+                with open(image_name_full_name, 'wb') as f:
+                    f.write(response.content)
+                LOGGER.info("write image:%s local, path:%s success", image.url, image_name_full_name)
+            status = LinkStatus.DONE
+            LOGGER.info("update image:%s, id:%s, status:%s", image.url, image.article_id, LinkStatus.DONE)
+        elif response.status_code == 404:
+            status = LinkStatus.NOTFOUND
+            LOGGER.info("update image:%s, id:%s, status:%s", image.url, image.article_id, LinkStatus.NOTFOUND)
+        return status, image
+
+    def run_in_thread_pool(self, image, full_name):
+        """
+        转换成同步函数
+        :param image:
+        :param full_name:
+        :return:
+        """
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        result = new_loop.run_until_complete(self.download_one_image(image, full_name))
+        return result

@@ -35,6 +35,7 @@ async def main3() -> None:
     await manager.get_all_resources_list_by_article()
     await manager.release()
 
+
 async def main4() -> None:
     manager = FpPageManager()
     await manager.connect()
