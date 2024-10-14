@@ -47,6 +47,7 @@ class HttpUtils:
                     timeout=(3, 10),
                     params=params,
                     headers=headers,
+                    allow_redirects=False,
                     proxies=ConfigManager.get_proxy_config(),
                 )
             except HTTPError as he:

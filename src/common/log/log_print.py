@@ -16,7 +16,7 @@ class LogUtils:
         "handlers": {
             "root_handler": {
                 "class": "logging.StreamHandler",
-                "level": "DEBUG",
+                "level": "INFO",
                 "formatter": "root_fmt",
             },
         },
@@ -42,10 +42,10 @@ class LogUtils:
             },
             "file": {
                 "class": "logging.handlers.RotatingFileHandler",
-                "level": "DEBUG",
+                "level": "INFO",
                 "formatter": "standard_fmt",
-                "backupCount": 5,
-                "maxBytes": 1048576,
+                "backupCount": 20,
+                "maxBytes": 2048576,
                 "encoding": "utf8",
                 "filename": "D:/code/python-pic/log/app.log",
             },
@@ -56,11 +56,11 @@ class LogUtils:
                 "handlers": ["file"],
             },
             "wh": {
-                "level": "DEBUG",
+                "level": "INFO",
                 "handlers": ["file"],
             },
             "fp": {
-                "level": "DEBUG",
+                "level": "INFO",
                 "handlers": ["file"],
             },
         }

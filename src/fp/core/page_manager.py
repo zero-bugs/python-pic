@@ -298,7 +298,11 @@ class FpPageManager:
         :return:
         """
         LOGGER.info("begin to execute download_all_resources_by_link")
-        condition = {}
+        condition = {
+            'status': {
+                'in': [LinkStatus.INITIAL, LinkStatus.DOING]
+            }
+        }
         take = 200
         skip = 0
         download_path = ConfigManager.get_download_root_path()
@@ -393,7 +397,16 @@ class FpPageManager:
             LOGGER.info("update image:%s, id:%s, status:%s", image.url, image.article_id, LinkStatus.DONE)
         elif response.status_code == 404:
             status = LinkStatus.NOTFOUND
-            LOGGER.info("update image:%s, id:%s, status:%s", image.url, image.article_id, LinkStatus.NOTFOUND)
+            LOGGER.info("update image:%s, id:%s, status:%s, http code:%d", image.url, image.article_id,
+                        status, response.status_code)
+        elif response.status_code == 302:
+            status = LinkStatus.UNREACHABLE
+            LOGGER.info("update image:%s, id:%s, status:%s, http code:%d", image.url, image.article_id,
+                        status, response.status_code)
+        elif response.status_code == 301:
+            status = LinkStatus.UNREACHABLE
+            LOGGER.info("update image:%s, id:%s, status:%s, http code:%d", image.url, image.article_id,
+                        status, response.status_code)
         return status, image
 
     def run_in_thread_pool(self, image, full_name):
