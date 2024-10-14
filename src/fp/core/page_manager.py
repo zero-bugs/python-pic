@@ -388,11 +388,11 @@ class FpPageManager:
         LOGGER.info("downloading image:%s, path:%s success", image.url, image.article_id)
 
         if response.status_code == 200:
-            if not os.path.exists(image_name_full_name):
-                LOGGER.info("write image:%s local, path:%s success", image.url, image_name_full_name)
-                with open(image_name_full_name, 'wb') as f:
-                    f.write(response.content)
-                LOGGER.info("write image:%s local, path:%s success", image.url, image_name_full_name)
+            # 暂时先不判断是否存在，直接覆盖写
+            LOGGER.info("write image:%s local, path:%s success", image.url, image_name_full_name)
+            with open(image_name_full_name, 'wb') as f:
+                f.write(response.content)
+            LOGGER.info("write image:%s local, path:%s success", image.url, image_name_full_name)
             status = LinkStatus.DONE
             LOGGER.info("update image:%s, id:%s, status:%s", image.url, image.article_id, LinkStatus.DONE)
         elif response.status_code == 404:
