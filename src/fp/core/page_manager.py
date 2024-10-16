@@ -82,9 +82,6 @@ class FpPageManager:
         :return:
         """
         LOGGER.info("begin to find all articles by inventories.")
-        condition = {}
-        take = 100
-        skip = 0
 
         playwright = await async_playwright().start()
         browser = await playwright.chromium.launch(headless=True, timeout=600000)
@@ -92,11 +89,17 @@ class FpPageManager:
         await page.route("**/*.{png,jpg,jpeg,gif,mp4,ts,m3u8}", lambda route: route.abort())
 
         article_list = []
+        condition = {
+            'status': {
+                'in': [LinkStatus.INITIAL, LinkStatus.DOING]
+            }
+        }
+        take = 100
+        skip = 1
         while True:
             inventories = await self.db_handler.list_inventories_by_condition(condition, take, skip)
             if inventories is None or len(inventories) == 0:
                 break
-            skip += len(inventories)
 
             for inventory in inventories:
                 if inventory.status != LinkStatus.INITIAL:
@@ -175,14 +178,17 @@ class FpPageManager:
         await page.route("**/*.{png,jpg,jpeg,gif,mp4,ts,m3u8}", lambda route: route.abort())
 
         resource_list = []
-        condition = {}
+        condition = {
+            'status': {
+                'in': [LinkStatus.INITIAL, LinkStatus.DOING]
+            }
+        }
         take = 100
-        skip = 0
+        skip = 1
         while True:
             articles = await self.db_handler.list_article_by_condition(condition, take, skip)
             if articles is None or len(articles) == 0:
                 break
-            skip += len(articles)
 
             for article in articles:
                 if article.status != LinkStatus.INITIAL:
@@ -304,14 +310,13 @@ class FpPageManager:
             }
         }
         take = 200
-        skip = 0
+        skip = 1
         download_path = ConfigManager.get_download_root_path()
         with ThreadPoolExecutor(max_workers=self.concurrent_num) as executor:
             while True:
                 images_list = await self.db_handler.list_images(condition, take, skip)
                 if images_list is None or len(images_list) == 0:
                     break
-                skip += len(images_list)
 
                 images = []
                 for image in images_list:
