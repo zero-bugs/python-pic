@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 import json
-import logging
 import os
 import re
 from datetime import datetime
 
-LOGGER = logging.getLogger('common')
+from loguru import logger
+
+LOGGER = logger.bind(module_name='common')
 
 
 class Utils:

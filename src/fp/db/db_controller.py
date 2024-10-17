@@ -6,13 +6,13 @@
 # @Time        : 2024/10/5 21:35
 # @Description :
 """
-import logging
 from typing import Any
 
+from loguru import logger
 from prisma import Prisma
 from prisma.models import InventoryTbl, ArticleTbl, ImageTbl
 
-LOGGER = logging.getLogger('fp')
+LOGGER = logger.bind(module_name='fp')
 
 
 class FpDbController:
@@ -34,10 +34,6 @@ class FpDbController:
         :param inventories:
         :return:
         """
-
-        if inventories is None:
-            return 0
-
         inv_create_list, inv_update_list = await self.handle_unique_insert(InventoryTbl, inventories)
         article_create_list, article_update_list = await self.handle_unique_insert(ArticleTbl, articles)
         img_create_list, img_update_list = await self.handle_unique_insert(ImageTbl, images)
@@ -126,7 +122,7 @@ class FpDbController:
                     }
                 )
             else:
-                LOGGER.warning("invalid input table", table)
+                LOGGER.warning("invalid input table:{}".format(table.__name__))
 
             if result is None:
                 create_entries.append(entry)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-import logging
 
 import requests
+from loguru import logger
 from requests import HTTPError
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import RetryError, ProxyError, SSLError
@@ -10,7 +10,7 @@ from requests.exceptions import RetryError, ProxyError, SSLError
 from common.config.config_manager import ConfigManager
 from common.config.link_status import LinkStatus
 
-LOGGER = logging.getLogger('common')
+LOGGER = logger.bind(module_name='common')
 
 
 class HttpUtils:
@@ -51,7 +51,8 @@ class HttpUtils:
                     proxies=ConfigManager.get_proxy_config(),
                 )
             except HTTPError as he:
-                LOGGER.error("http error.", he)
+                LOGGER.warning("http error.")
+                LOGGER.exception(he)
             # except ConnectTimeout as ce:
             #     LOGGER.warning("url:{} not arrived. error:".format(url), ce)
             #     status = LinkStatus.DOING
@@ -62,16 +63,20 @@ class HttpUtils:
             #     LOGGER.warning("http timeout.", tx)
             #     status = LinkStatus.DOING
             except ProxyError as rx:
-                LOGGER.warning("proxy error.", rx)
+                LOGGER.warning("proxy error.")
+                LOGGER.exception(rx)
                 status = LinkStatus.DOING
             except SSLError as se:
-                LOGGER.warning("SSL error.", se)
+                LOGGER.warning("SSL error.")
+                LOGGER.exception(se)
                 status = LinkStatus.UNREACHABLE
             except RetryError as rx:
-                LOGGER.warning("retry error.", rx)
+                LOGGER.warning("retry error.")
+                LOGGER.exception(rx)
                 status = LinkStatus.UNREACHABLE
             except BaseException as bx:
-                LOGGER.warning("unexpect error.", bx)
+                LOGGER.warning("unexpect error.")
+                LOGGER.exception(bx)
                 status = LinkStatus.UNREACHABLE
         return status, response
 

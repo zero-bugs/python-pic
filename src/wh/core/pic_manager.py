@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-import logging
 import os
 import time
 
+from loguru import logger
 from prisma.models import WhImage
 
 from common.config.config_manager import ConfigManager
@@ -13,7 +13,7 @@ from common.utils.utils import Utils
 from wh.db.db_controller import WhDbController
 from wh.meta.image_meta import ImageMeta
 
-LOGGER = logging.getLogger('wh')
+LOGGER = logger.bind(module_name='wh')
 
 
 class WhPicManager:
@@ -78,7 +78,7 @@ class WhPicManager:
 
             # 所有图片都无需下载时，不继续遍历
             if download_result and is_stop_auto:
-                LOGGER.warning("no need continue download, current page: %d, url: %s", current_page, url)
+                LOGGER.warning("no need continue download, current page: {}, url: {}".format(current_page, url))
                 break
 
             time.sleep(0.5)
@@ -125,7 +125,7 @@ class WhPicManager:
                 await self.db_handler.update_image_status_for_obj(image, status)
                 continue
 
-            LOGGER.info("downloading image:%s", image['path'])
+            LOGGER.info("downloading image:{}".format(image['path']))
             if response.status_code == 200:
                 with open(image_name_full_path, 'wb') as f:
                     f.write(response.content)
@@ -135,7 +135,7 @@ class WhPicManager:
                 LOGGER.warning("image not found. img:{}".format(image_name))
                 image_actual_no_need_dld += 1
         else:
-            LOGGER.info("downloaded:%d and list:%d", image_actual_no_need_dld, len(images))
+            LOGGER.info("downloaded:{} and list:{}".format(image_actual_no_need_dld, len(images)))
             return image_actual_no_need_dld == len(images)
 
     def get_pic_suffix(self, extension):
@@ -147,7 +147,7 @@ class WhPicManager:
         elif 'png' in extension:
             return '.png'
         else:
-            LOGGER.warning("pic suffix is not support. ", extension)
+            LOGGER.warning("pic suffix:{} is not support.".format(extension))
             return '.jpg'
 
     async def background_full_scan_and_download(self):
@@ -175,25 +175,25 @@ class WhPicManager:
                 if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
                     continue
 
-                LOGGER.info("downloading image:%s, path:%s", image.id, image.path)
+                LOGGER.info("downloading image:{}, path:{}".format(image.id, image.path))
                 status, response = HttpUtils.fetch_with_retry_binary(image.path)
                 if response is None:
                     await self.db_handler.update_image_status_for_obj(image, status)
                     continue
 
-                LOGGER.info("downloading image:%s, path:%s success", image.id, image.path)
+                LOGGER.info("downloading image:{}, path:{} success".format(image.id, image.path))
 
                 if response.status_code == 200:
                     _, image_name_full_path = self.get_image_full_name_obj(download_path, image)
                     if not os.path.exists(image_name_full_path):
                         with open(image_name_full_path, 'wb') as f:
                             f.write(response.content)
-                        LOGGER.info("write image:%s local, path:%s success", image.id, image.path)
+                        LOGGER.info("write image:{} local, path:{} success".format(image.id, image.path))
                     await self.db_handler.update_image_status_for_obj(image, LinkStatus.DONE)
-                    LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.DONE)
+                    LOGGER.info("update image:{}, status:{}".format(image.id, LinkStatus.DONE))
                 elif response.status_code == 404:
                     await self.db_handler.update_image_status_for_obj(image, LinkStatus.NOTFOUND)
-                    LOGGER.info("update image:%s, status:%s", image.id, LinkStatus.NOTFOUND)
+                    LOGGER.info("update image:{}, status:{}".format(image.id, LinkStatus.NOTFOUND))
 
     def get_image_full_path_dict(self, download_path, image):
         image_name = image['id'] + self.get_pic_suffix(image['file_type'])

@@ -8,7 +8,7 @@ from fp.core.page_manager import FpPageManager
 from wh.core.pic_manager import WhPicManager
 
 # 日志初始化
-LogUtils.logging_init()
+LogUtils.logging_init_loguru()
 
 os.environ['NO_PROXY'] = 'localhost'
 
@@ -30,9 +30,9 @@ async def main2() -> None:
 async def main3() -> None:
     manager = FpPageManager()
     await manager.connect()
-    await manager.get_all_actresses_list()
+    # await manager.get_all_actresses_list()
     await manager.get_all_actresses_list_by_inventory()
-    await manager.get_all_resources_list_by_article()
+    # await manager.get_all_resources_list_by_article()
     await manager.release()
 
 
@@ -45,5 +45,5 @@ async def main4() -> None:
 
 if __name__ == "__main__":
     # asyncio.run(main())
-    # asyncio.run(main3())
-    asyncio.run(main4())
+    asyncio.run(main3())
+    # asyncio.run(main4())

@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-import logging
 from typing import Any
 
+from loguru import logger
 from prisma import Prisma
 from prisma.models import WhImage, Uploader, Tag
 
-LOGGER = logging.getLogger('common')
+LOGGER = logger.bind(module_name='common')
 
 
 class WhDbController:
@@ -100,7 +100,7 @@ class WhDbController:
                     }
                 )
             else:
-                LOGGER.warning("invalid input table", table)
+                LOGGER.warning("invalid input table:{}".format(table.__name__))
 
             if result is None:
                 create_entries.append(entry)
@@ -177,4 +177,4 @@ class WhDbController:
         elif table.__name__ == 'Uploader':
             return entry["username"] != result.username or entry["group"] != result.group
         else:
-            LOGGER.warning("invalid input table", table)
+            LOGGER.warning("invalid input table:{}".format(table.__name__))
