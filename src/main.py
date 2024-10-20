@@ -31,7 +31,7 @@ async def main3() -> None:
     manager = FpPageManager()
     await manager.connect()
     # await manager.get_all_actresses_list()
-    await manager.get_all_actresses_list_by_inventory()
+    # await manager.get_all_actresses_list_by_inventory()
     # await manager.get_all_resources_list_by_article()
     await manager.release()
 
@@ -44,6 +44,4 @@ async def main4() -> None:
 
 
 if __name__ == "__main__":
-    # asyncio.run(main())
-    asyncio.run(main3())
-    # asyncio.run(main4())
+    asyncio.run(main())

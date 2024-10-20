@@ -26,12 +26,13 @@ class FpDbController:
         await self.prisma.disconnect()
 
     async def batch_insert_table(self, inventories: list[dict[str, Any]], articles: list[dict[str, Any]],
-                                 images: list[dict[str, Any]]):
+                                 images: list[dict[str, Any]], is_repeat_over_ride: bool = False):
         """
         插入图片，处理冲突。
         :param images:
         :param articles:
         :param inventories:
+        :param is_repeat_over_ride: 重复时是否更新，覆盖
         :return:
         """
         inv_create_list, inv_update_list = await self.handle_unique_insert(InventoryTbl, inventories)
@@ -50,6 +51,10 @@ class FpDbController:
             await ImageTbl.prisma(transaction).create_many(
                 data=img_create_list
             )
+
+            # 没启用存在更新时，退出
+            if not is_repeat_over_ride:
+                return
 
             for value in inv_update_list:
                 await InventoryTbl.prisma(transaction).update(

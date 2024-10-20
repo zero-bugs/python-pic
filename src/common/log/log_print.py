@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import logging.config as lc
+import os
 import sys
 
 from loguru import logger
@@ -76,17 +77,22 @@ class LogUtils:
 
     @staticmethod
     def logging_init_loguru():
+        current_working_directory = os.getcwd()
+        log_path = os.path.join(current_working_directory, "..", "log")
+        log_file = os.path.join(log_path, "run.log")
+        archive_log_file = log_path + "/run_{time}.log"
         logger.configure(handlers=[
             {
                 "sink": sys.stdout,
-                "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>mymodule</>| - <lvl>{message}</>",
-                "colorize": True
+                "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>module</>| - <lvl>{message}</>",
+                "colorize": True,
+                "level": "INFO"
             },
             {
-                "sink": 'D:/code/python-pic/log/run.log',
-                "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>mymodule</>| - <lvl>{message}</>",
+                "sink": log_file,
+                "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>module</>| - <lvl>{message}</>",
                 "colorize": False,
                 "level": "INFO"
             }
         ])
-        logger.add("run_{time}.log", rotation='100 MB', compression='gz', retention=10, enqueue=True)
+        logger.add(archive_log_file, rotation='100 MB', compression='gz', retention=10, enqueue=True)

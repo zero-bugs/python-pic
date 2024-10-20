@@ -5,7 +5,7 @@ import requests
 from loguru import logger
 from requests import HTTPError
 from requests.adapters import HTTPAdapter, Retry
-from requests.exceptions import RetryError, ProxyError, SSLError
+from requests.exceptions import RetryError, ProxyError, SSLError, ConnectTimeout, ReadTimeout, Timeout
 
 from common.config.config_manager import ConfigManager
 from common.config.link_status import LinkStatus
@@ -51,31 +51,35 @@ class HttpUtils:
                     proxies=ConfigManager.get_proxy_config(),
                 )
             except HTTPError as he:
-                LOGGER.warning("http error.")
+                LOGGER.warning("http error, url:{} not arrived.".format(url))
                 LOGGER.exception(he)
-            # except ConnectTimeout as ce:
-            #     LOGGER.warning("url:{} not arrived. error:".format(url), ce)
-            #     status = LinkStatus.DOING
-            # except ReadTimeout as re:
-            #     LOGGER.warning("read timeout.", re)
-            #     status = LinkStatus.DOING
-            # except Timeout as tx:
-            #     LOGGER.warning("http timeout.", tx)
-            #     status = LinkStatus.DOING
-            except ProxyError as rx:
-                LOGGER.warning("proxy error.")
-                LOGGER.exception(rx)
                 status = LinkStatus.DOING
+            except ConnectTimeout as ce:
+                LOGGER.warning("connect timeout, url:{} not arrived.".format(url))
+                LOGGER.exception(ce)
+                status = LinkStatus.DOING
+            except ReadTimeout as re:
+                LOGGER.warning("read timeout, url:{} not arrived.".format(url))
+                LOGGER.exception(re)
+                status = LinkStatus.DOING
+            except Timeout as tx:
+                LOGGER.warning("timeout, url:{} not arrived.".format(url))
+                LOGGER.exception(tx)
+                status = LinkStatus.DOING
+            except ProxyError as rx:
+                LOGGER.warning("proxy error, url:{} not arrived.".format(url))
+                LOGGER.exception(rx)
+                status = LinkStatus.UNREACHABLE
             except SSLError as se:
-                LOGGER.warning("SSL error.")
+                LOGGER.warning("SSL error, url:{} not arrived.".format(url))
                 LOGGER.exception(se)
                 status = LinkStatus.UNREACHABLE
             except RetryError as rx:
-                LOGGER.warning("retry error.")
+                LOGGER.warning("retry error, url:{} not arrived.".format(url))
                 LOGGER.exception(rx)
                 status = LinkStatus.UNREACHABLE
             except BaseException as bx:
-                LOGGER.warning("unexpect error.")
+                LOGGER.warning("unexpect error, url:{} not arrived.".format(url))
                 LOGGER.exception(bx)
                 status = LinkStatus.UNREACHABLE
         return status, response

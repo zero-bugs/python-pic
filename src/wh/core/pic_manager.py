@@ -101,7 +101,7 @@ class WhPicManager:
         if images is None:
             return False
 
-        download_path = WhPicManager.get_download_root_path()
+        download_path = ConfigManager.get_download_root_path()
 
         image_actual_no_need_dld = 0
         for image in images:
@@ -125,7 +125,7 @@ class WhPicManager:
                 await self.db_handler.update_image_status_for_obj(image, status)
                 continue
 
-            LOGGER.info("downloading image:{}".format(image['path']))
+            LOGGER.info("downloading image id:{}, url:{}".format(image['id'], image['path']))
             if response.status_code == 200:
                 with open(image_name_full_path, 'wb') as f:
                     f.write(response.content)
@@ -167,6 +167,7 @@ class WhPicManager:
         download_path = ConfigManager.get_download_root_path()
         while True:
             images = await self.db_handler.list_images_by_date(condition, take, skip)
+            skip = 1
             if images is None or len(images) == 0:
                 break
             skip += len(images)

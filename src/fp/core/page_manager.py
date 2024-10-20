@@ -89,9 +89,10 @@ class FpPageManager:
             }
         }
         take = 100
-        skip = 1
+        skip = 0
         while True:
             inventories = await self.db_handler.list_inventories_by_condition(condition, take, skip)
+            skip = 1
             if inventories is None or len(inventories) == 0:
                 break
 
@@ -173,9 +174,10 @@ class FpPageManager:
             }
         }
         take = 100
-        skip = 1
+        skip = 0
         while True:
             articles = await self.db_handler.list_article_by_condition(condition, take, skip)
+            skip = 1
             if articles is None or len(articles) == 0:
                 break
 
@@ -248,7 +250,7 @@ class FpPageManager:
                     LOGGER.warning("find all resources by url:{} has no articles.".format(current_url))
 
                 await self.db_handler.update_article_status(article, LinkStatus.DONE)
-                LOGGER.info("article url:%s obtain success.", current_url)
+                LOGGER.info("article url:{} obtain success.".format(current_url))
                 resource_list.clear()
             else:
                 LOGGER.info("end to find to resources, articles num:{}, do next batch".format(len(articles)))
@@ -300,20 +302,14 @@ class FpPageManager:
             }
         }
         take = 200
-        skip = 1
+        skip = 0
         download_path = ConfigManager.get_download_root_path()
         with ThreadPoolExecutor(max_workers=self.concurrent_num) as executor:
             while True:
-                images_list = await self.db_handler.list_images(condition, take, skip)
-                if images_list is None or len(images_list) == 0:
+                images = await self.db_handler.list_images(condition, take, skip)
+                skip = 1
+                if images is None or len(images) == 0:
                     break
-
-                images = []
-                for image in images_list:
-                    if image.status == LinkStatus.INITIAL or image.status == LinkStatus.DOING:
-                        images.append(image)
-                if len(images) == 0:
-                    continue
 
                 while len(images) > 0:
                     subtasks = []
@@ -335,7 +331,7 @@ class FpPageManager:
                         if status != image.status:
                             await self.db_handler.update_image_status_for_obj(image, status)
                             LOGGER.info("update image url:{}, id:{}, status:{}".format(image.url, image.article_id,
-                                                                                       LinkStatus.DONE))
+                                                                                       status))
                     LOGGER.info("end to execute thread done num:{}".format(len(done)))
 
     async def get_image_full_name_obj(self, download_path, image):
@@ -383,11 +379,12 @@ class FpPageManager:
         LOGGER.info("downloading image:{}, path:{} success".format(image.url, image.article_id))
 
         if response.status_code == 200:
-            # 暂时先不判断是否存在，直接覆盖写
-            LOGGER.info("write image:{} local, path:{} success".format(image.url, image_name_full_name))
-            with open(image_name_full_name, 'wb') as f:
-                f.write(response.content)
-            LOGGER.info("write image:{} local, path:{} success".format(image.url, image_name_full_name))
+            # 不存在时或者大小为零，才会覆盖写
+            if not os.path.exists(image_name_full_name) or os.stat(image_name_full_name).st_size == 0:
+                LOGGER.info("write image:{} local, path:{} success".format(image.url, image_name_full_name))
+                with open(image_name_full_name, 'wb') as f:
+                    f.write(response.content)
+                LOGGER.info("write image:{} local, path:{} success".format(image.url, image_name_full_name))
             status = LinkStatus.DONE
             LOGGER.info("update image:{}, id:{}, status:{}".format(image.url, image.article_id, LinkStatus.DONE))
         elif response.status_code == 404:
