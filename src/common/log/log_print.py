@@ -80,7 +80,6 @@ class LogUtils:
         current_working_directory = os.getcwd()
         log_path = os.path.join(current_working_directory, "..", "log")
         log_file = os.path.join(log_path, "run.log")
-        archive_log_file = log_path + "/run_{time}.log"
         logger.configure(handlers=[
             {
                 "sink": sys.stdout,
@@ -92,7 +91,10 @@ class LogUtils:
                 "sink": log_file,
                 "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>module</>| - <lvl>{message}</>",
                 "colorize": False,
-                "level": "INFO"
+                "level": "INFO",
+                "rotation": '100 MB',
+                "compression": "gz",
+                "retention": 10,
+                "enqueue": True
             }
         ])
-        logger.add(archive_log_file, rotation='100 MB', compression='gz', retention=10, enqueue=True)

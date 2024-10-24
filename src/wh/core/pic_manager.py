@@ -48,6 +48,9 @@ class WhPicManager:
         headers = {}
 
         result = HttpUtils.fetch_with_retry_json(url, params=params, headers=headers)
+        if result is {}:
+            return None
+
         meta = result['meta']
         data = result['data']
 
