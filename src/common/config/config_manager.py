@@ -34,14 +34,15 @@ class ConfigManager:
         return jconfig['type']
 
     @staticmethod
-    def get_api_key():
-        jconfig = Utils.read_json_file('../config/app_config.json')
-        return jconfig['apikey']
-
-    @staticmethod
     def get_output_dir():
         jconfig = Utils.read_json_file('../config/app_config.json')
         return jconfig['path']
+
+    @staticmethod
+    def get_api_key():
+        jconfig = Utils.read_json_file('../config/api_list.json')
+        b_type = ConfigManager.get_type()
+        return jconfig[b_type]['apikey']['api_key']
 
     @staticmethod
     def get_wh_query_images_api():

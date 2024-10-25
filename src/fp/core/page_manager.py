@@ -15,10 +15,10 @@ from loguru import logger
 from playwright.async_api import async_playwright
 
 from common.config.config_manager import ConfigManager
-from common.config.link_status import LinkStatus
+from common.constant.link_status import LinkStatus
+from common.constant.resource_type import ResourceType
 from common.http.http_utils import HttpUtils
 from common.utils.utils import Utils
-from fp.core.common import ResourceType
 from fp.db.db_controller import FpDbController
 
 LOGGER = logger.bind(module_name='fp')

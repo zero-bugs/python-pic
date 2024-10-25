@@ -7,7 +7,7 @@ from loguru import logger
 from prisma.models import WhImage
 
 from common.config.config_manager import ConfigManager
-from common.config.link_status import LinkStatus
+from common.constant.link_status import LinkStatus
 from common.http.http_utils import HttpUtils
 from common.utils.utils import Utils
 from wh.db.db_controller import WhDbController

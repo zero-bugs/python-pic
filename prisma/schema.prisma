@@ -80,3 +80,24 @@ model ImageTbl {
   summary        String?
   status         Int           @default(0)
 }
+
+
+// kc.schema.prisma
+model KcImageTbl {
+  id               Int       @unique
+  created_at       Int
+  creator_id       Int?
+  author           String?
+  file_url         String
+  width            String
+  height           String
+  rating           String
+  score            Int
+  file_size        Int
+  file_ext         String
+  md5              String
+  tags             String?
+  status           Int          @default(0)
+}
+
+

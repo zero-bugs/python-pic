@@ -8,7 +8,7 @@ from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import RetryError, ProxyError, SSLError, ConnectTimeout, ReadTimeout, Timeout
 
 from common.config.config_manager import ConfigManager
-from common.config.link_status import LinkStatus
+from common.constant.link_status import LinkStatus
 
 LOGGER = logger.bind(module_name='common')
 

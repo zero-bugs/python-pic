@@ -4,6 +4,7 @@
     "host": "wallhaven.cc",
     "help": "https://wallhaven.cc/help/api",
     "email": "wallhavendotcc@gmail.com",
+    "api_key": "",
     "QUERY_LIST_IMAGES": {
       "apiId": "QUERY_LIST_IMAGES",
       "desc": "Searching and listings",
@@ -26,10 +27,35 @@
     "host": "thefappening.pro",
     "help": "https://thefappening.pro/contacts/",
     "email": "thefappening.pro@gmail.com",
+    "api_key": "",
     "ALL_ACTRESSES_LIST": {
       "apiId": "ALL_ACTRESSES_LIST",
       "desc": "Searching and listings",
       "uri": "/all-actresses-list/",
+      "method": "GET"
+    }
+  },
+  "kc": {
+    "protocol": "https",
+    "host": "konachan.com",
+    "help": "https://konachan.com/help/api",
+    "email": "staff@booru.org",
+    "ALL_ACTRESSES_LIST": {
+      "apiId": "ALL_LIST",
+      "desc": "Listings",
+      "uri": "/post.json",
+      "method": "GET"
+    }
+  },
+  "yd": {
+    "protocol": "https",
+    "host": "yande.re",
+    "help": "https://yande.re/help/api",
+    "email": "",
+    "ALL_ACTRESSES_LIST": {
+      "apiId": "ALL_LIST",
+      "desc": "Listings",
+      "uri": "/post.json",
       "method": "GET"
     }
   }
