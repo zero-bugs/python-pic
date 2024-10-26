@@ -37,7 +37,7 @@ class WhPicManager:
         :return:
         """
 
-        url = ConfigManager.get_wh_query_images_api()
+        url = ConfigManager.get_query_images_api()
         params = {
             "categories": "111",
             "purity": "011",
@@ -125,7 +125,7 @@ class WhPicManager:
             status, response = HttpUtils.fetch_with_retry_binary(image['path'])
             if response is None:
                 image_actual_no_need_dld += 1
-                await self.db_handler.update_image_status_for_obj(image, status)
+                await self.db_handler.update_image_status_for_dict(image, status)
                 continue
 
             LOGGER.info("downloading image id:{}, url:{}".format(image['id'], image['path']))

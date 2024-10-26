@@ -45,7 +45,7 @@ class ConfigManager:
         return jconfig[b_type]['api_key']
 
     @staticmethod
-    def get_wh_query_images_api():
+    def get_query_images_api():
         jconfig = Utils.read_json_file('../config/api_list.json')
         wh_jconfig = jconfig[ConfigManager.get_type()]
         protocol = wh_jconfig['protocol']
@@ -69,3 +69,4 @@ class ConfigManager:
         if not os.path.exists(download_path):
             os.makedirs(download_path, exist_ok=True)
         return download_path
+

@@ -40,9 +40,9 @@
     "host": "konachan.com",
     "help": "https://konachan.com/help/api",
     "email": "staff@booru.org",
-    "ALL_ACTRESSES_LIST": {
-      "apiId": "ALL_LIST",
-      "desc": "Listings",
+    "QUERY_LIST_IMAGES": {
+      "apiId": "QUERY_LIST_IMAGES",
+      "desc": "Searching and listings",
       "uri": "/post.json",
       "method": "GET"
     }
@@ -52,9 +52,9 @@
     "host": "yande.re",
     "help": "https://yande.re/help/api",
     "email": "",
-    "ALL_ACTRESSES_LIST": {
-      "apiId": "ALL_LIST",
-      "desc": "Listings",
+    "QUERY_LIST_IMAGES": {
+      "apiId": "QUERY_LIST_IMAGES",
+      "desc": "Searching and listings",
       "uri": "/post.json",
       "method": "GET"
     }
