@@ -103,6 +103,7 @@ class WhPicManager:
         image_actual_no_need_dld = 0
         for image in images:
             if image['purity'] != 'nsfw' and image['purity'] != 'sketchy':
+                LOGGER.warning("image:{} wrong purity:{}.", image['id'], image['purity'])
                 continue
 
             # 检查图片数据库是否存在
@@ -122,6 +123,7 @@ class WhPicManager:
             status, response = HttpUtils.fetch_with_retry_binary(image['path'])
             if response is None:
                 await self.db_handler.update_image_status_for_dict(image, status)
+                LOGGER.warning("image:{} with url:{} response is null.", image['id'], image['path'])
                 continue
 
             LOGGER.info(
