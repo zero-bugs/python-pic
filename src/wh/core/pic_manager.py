@@ -46,7 +46,6 @@ class WhPicManager:
             "apikey": self.api_key
         }
         headers = {}
-
         result = HttpUtils.fetch_with_retry_json(url, params=params, headers=headers)
         if result is {}:
             return None
@@ -54,7 +53,7 @@ class WhPicManager:
         meta = result['meta']
         data = result['data']
 
-        current_page = 0
+        current_page = 1
         per_page = 0
         last_page = 0
         if meta is not None:
@@ -70,6 +69,8 @@ class WhPicManager:
         while current_page < last_page:
             current_page += 1
             params['page'] = current_page
+
+            LOGGER.info("current link:{}, page:{}".format(url, current_page))
 
             result = HttpUtils.fetch_with_retry_json(url, params=params, headers=headers)
             data = result['data']
@@ -109,36 +110,39 @@ class WhPicManager:
         image_actual_no_need_dld = 0
         for image in images:
             if image['purity'] != 'nsfw' and image['purity'] != 'sketchy':
-                image_actual_no_need_dld += 1
                 continue
-            # 检查图片是否存在
-            image_name, image_name_full_path = self.get_image_full_path_dict(download_path, image)
-            if os.path.exists(image_name_full_path):
+
+            # 检查图片数据库是否存在
+            result = await self.db_handler.find_one_entry(WhImage, image['id'])
+            if result is not None and result.status != LinkStatus.INITIAL:
+                LOGGER.warning("image:{} has in db.", image['id'])
                 image_actual_no_need_dld += 1
                 continue
 
-            result = await self.db_handler.find_one_entry(WhImage, image['id'])
-            if result is None or result.status != LinkStatus.INITIAL:
+            # 检查图片本地是否存在
+            image_name, image_name_full_path = self.get_image_full_path_dict(download_path, image)
+            if os.path.exists(image_name_full_path):
+                LOGGER.warning("image:{} has in local:{}.", image['id'], image_name_full_path)
                 image_actual_no_need_dld += 1
                 continue
 
             status, response = HttpUtils.fetch_with_retry_binary(image['path'])
             if response is None:
-                image_actual_no_need_dld += 1
                 await self.db_handler.update_image_status_for_dict(image, status)
                 continue
 
-            LOGGER.info("downloading image id:{}, url:{}".format(image['id'], image['path']))
+            LOGGER.info(
+                "downloading image id:{}, url:{}, path:{}".format(image['id'], image['path'], image_name_full_path))
             if response.status_code == 200:
                 with open(image_name_full_path, 'wb') as f:
                     f.write(response.content)
                 await self.db_handler.update_image_status_for_dict(image, LinkStatus.DONE)
             if response.status_code == 404:
                 await self.db_handler.update_image_status_for_dict(image, LinkStatus.NOTFOUND)
-                LOGGER.warning("image not found. img:{}".format(image_name))
-                image_actual_no_need_dld += 1
+                LOGGER.warning("image not found. image id:{}, url:{}".format(image['id'], image['path']))
         else:
-            LOGGER.info("downloaded:{} and list:{}".format(image_actual_no_need_dld, len(images)))
+            LOGGER.info("the count of image which do not need download is: {}, but all list is: {}".format(
+                image_actual_no_need_dld, len(images)))
             return image_actual_no_need_dld == len(images)
 
     def get_pic_suffix(self, extension):
