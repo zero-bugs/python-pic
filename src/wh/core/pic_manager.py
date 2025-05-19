@@ -51,21 +51,14 @@ class WhPicManager:
             return None
 
         meta = result['meta']
-        data = result['data']
-
-        current_page = 1
-        per_page = 0
         last_page = 0
         if meta is not None:
             last_page = meta['last_page']
-            per_page = meta['per_page']
 
-        images = self.get_images_from_resp(data)
-        await self.db_handler.batch_insert_table(images, list(), list())
-        if is_download:
-            await self.download_wh_images(images)
+        LOGGER.info("meta info, meta:{}.".format(meta))
 
         download_result = False
+        current_page = 0
         while current_page < last_page:
             current_page += 1
             params['page'] = current_page
