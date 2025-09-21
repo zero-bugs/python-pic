@@ -32,7 +32,7 @@ class CosBlayPageManager:
         self.img_all_links = set()
         self.page_all_links = set()
 
-    async def template_get_links(self, start_page: str):
+    async def template_get_link_from_detail_page(self, start_page: str):
         """
         详细信息模板页面，通过起始页面信息找到接下来的页面
         :param start_page: html文件地址，非全量url
@@ -70,35 +70,15 @@ class CosBlayPageManager:
                 continue
 
             if is_first_page:
-                title = await page.locator(
-                    ".site-content > .content-area > .site-main article > .inside-article > .entry-header > .entry-title"
-                ).inner_text()
-                if title and title.strip() != "":
-                    self.title = title.strip()
-                    is_first_page = False
+                await self.init_detail_page_meta(page, is_first_page)
+                is_first_page = False
 
-                artile_meta = await page.locator(
-                    ".site-content > .content-area > .site-main article"
-                ).all()
-                if artile_meta:
-                    for meta in artile_meta:
-                        article_id = await meta.get_attribute("id")
-                        if article_id and article_id.startswith("post-"):
-                            self.article = article_id
-                            is_first_page = False
-
-                LOGGER.info(
-                    f"host:{self.host}, title:{self.title}, article:{self.article}"
-                )
-                if self.article is None or self.title is None:
-                    return
-
-            is_article_checked = False
+            is_fc_checked = True
             articles = await page.locator(
                 ".site-content > .content-area > .site-main article > .inside-article > .entry-content"
             ).all()
             for article_val in articles:
-                is_article_checked = True
+                is_fc_checked = False
                 links = await article_val.get_by_role("link").all()
                 for link in links:
                     href = await link.get_attribute("href")
@@ -114,7 +94,7 @@ class CosBlayPageManager:
                 self.img_all_links.clear()
 
             # 如果流控了，继续使用同一个地址等待
-            if await self.check_page_flow_control(page, is_article_checked):
+            if await self.check_page_flow_control(page, is_fc_checked):
                 continue
 
             # find next page
@@ -144,6 +124,28 @@ class CosBlayPageManager:
         await browser.close()
         await playwright.stop()
 
+    async def init_detail_page_meta(self, page, is_first_time):
+        if not is_first_time:
+            return
+
+        title = await page.locator(
+            ".site-content > .content-area > .site-main article > .inside-article > .entry-header > .entry-title"
+        ).inner_text()
+        if title and title.strip() != "":
+            self.title = title.strip()
+        artile_meta = await page.locator(
+            ".site-content > .content-area > .site-main article"
+        ).all()
+        if artile_meta:
+            for meta in artile_meta:
+                article_id = await meta.get_attribute("id")
+                if article_id and article_id.startswith("post-"):
+                    self.article = article_id
+        LOGGER.info(f"host:{self.host}, title:{self.title}, article:{self.article}")
+
+        if self.article is None or self.title is None:
+            raise ValueError(f"article:{self.article} or title:{self.title} is empty")
+
     async def init_params(self, start_page):
         url = urllib.parse.urlparse(start_page)
         self.host = url.hostname
@@ -151,7 +153,9 @@ class CosBlayPageManager:
         if self.host is None or self.host == "":
             raise ValueError("host param is None")
 
-    async def template_get_links_by_list(self, start_page: str, keyword: str = None):
+    async def template_get_link_from_batch_page(
+        self, start_page: str, keyword: str = None
+    ):
         """
         列表显示模板，支持通过关键字搜索获取图片 或者 分类的链接
         :param keyword:
@@ -194,9 +198,9 @@ class CosBlayPageManager:
                 ".site-content > .content-area > .site-main article > .inside-article > .post-image"
             ).all()
 
-            is_article_checked = False
+            is_article_checked = True
             for article in articles:
-                is_article_checked = True
+                is_article_checked = False
                 article_links = await article.get_by_role("link").all()
                 for link in article_links:
                     href = await link.get_attribute("href")
@@ -248,9 +252,9 @@ class CosBlayPageManager:
         await browser.close()
         await playwright.stop()
 
-    async def check_page_flow_control(self, page, is_article_checked=True):
+    async def check_page_flow_control(self, page, is_force_checked=True):
         is_flow_control = False
-        if not is_article_checked:
+        if is_force_checked:
             flow_control_page = await page.locator(
                 "#error-page > .wp-die-message"
             ).all()
@@ -263,44 +267,6 @@ class CosBlayPageManager:
                         is_flow_control = True
                         continue
         return is_flow_control
-
-    async def __get_article_meta(self, page, article, page_address):
-        # 获取article元数据
-        article_id = await article.get_attribute("id")
-        if article_id is None:
-            return False
-        if not article_id.startswith("post-"):
-            return False
-        self.article = article_id
-
-        # 获取title
-        title_val = await article.locator(".entry-title").all()
-        if title_val is None or len(title_val) == 0:
-            return False
-        self.title = await title_val[0].inner_text()
-
-        # 获取页码相关元数据
-        meta_message = await page.locator(".pgntn-page-pagination-block").all()
-        if meta_message is None:
-            LOGGER.info("url:{} has not meta.".format(page_address))
-            return False
-
-        for meta_info in meta_message:
-            hef_list = await meta_info.locator(".post-page-numbers").all()
-            if hef_list is None:
-                LOGGER.info("url:{} has not hef.".format(page_address))
-                continue
-
-            for page_num in hef_list:
-                num = await page_num.text_content()
-                if num is None or not num.isdigit():
-                    continue
-                num = num.strip()
-                if int(num) > self.max_page:
-                    self.max_page = int(num)
-                    continue
-            return True
-        return False
 
     async def __download_all_link_by_serial(self):
         if len(self.img_all_links) == 0:
@@ -322,4 +288,3 @@ class CosBlayPageManager:
             file_full_path = os.path.join(f"%s" % img_path, filename)
 
             ResourceDownloadUtils.download_image(link, file_full_path)
-            # time.sleep(random.randint(1, 3))

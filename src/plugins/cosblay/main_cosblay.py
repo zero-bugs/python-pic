@@ -28,7 +28,7 @@ LOGGER = logger.bind(module_name="cosblay")
 async def main() -> None:
     cos_manager = CosBlayPageManager()
     for task in TASK_LIST:
-        await cos_manager.template_get_links(task)
+        await cos_manager.template_get_link_from_detail_page(task)
 
     # await cos_manager.template_get_links_by_list("https://www.hongimg.com", "色情")
 
