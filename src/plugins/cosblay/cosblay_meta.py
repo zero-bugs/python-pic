@@ -7,22 +7,26 @@
 # @Description :
 """
 
-from common.utils.object_print import ObjectPrint
 
-
-class CosBlayMeta(ObjectPrint):
-    def custom_print(self):
-        pass
-
-    def obj_print(self) -> str:
-        return "|".join(
-            [self.p_title, self.p_name, self.p_format, self.p_time, self.p_address]
-        )
-
+class CosDetailPageMeta(object):
     def __init__(self):
-        self.p_title = ""
-        self.p_name = ""
-        self.p_format = ""
-        self.p_time = ""
-        self.p_address = list()
-        self.p_summary = ""
+        self.id = ""
+        self.title = ""
+        self.url = ""
+        self.summary = ""
+        self.img_list = dict()
+
+    def __str__(self):
+        return "|".join([self.id, self.title, self.url])
+
+
+class CosBatchPageMeta(object):
+    def __init__(self):
+        self.title = ""
+        self.name = ""
+        self.cur_page = ""
+        self.summary = ""
+        self.page_links = dict()
+
+    def __str__(self):
+        return "|".join([self.title, self.name])

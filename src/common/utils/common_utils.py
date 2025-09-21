@@ -19,9 +19,9 @@ class CommonUtils(object):
         interval = int(count / 10)
         remainder = count % 10
         for i in range(interval):
-            LOGGER.info("waiting 10s....")
+            LOGGER.info("waiting 10s...")
             time.sleep(10)
 
         if remainder > 0:
-            LOGGER.info(f"waiting {remainder}s....")
+            LOGGER.info(f"waiting {remainder}s...")
             time.sleep(remainder)

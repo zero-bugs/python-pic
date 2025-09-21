@@ -8,8 +8,11 @@
 """
 import os
 import re
+from random import random
 
 from loguru import logger
+
+from common.utils.config_utils import ConfigUtils
 
 LOGGER = logger.bind(module_name=__name__)
 
@@ -62,10 +65,12 @@ class FileUtils:
             os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
         if not overwrite and os.path.exists(file_name):
-            return
+            cur_time = ConfigUtils.get_current_time()
+            index = file_name.rfind(".")
+            file_name = file_name[:index] + "_" + cur_time + "." + file_name[index + 1:]
 
         if not content or len(content) == 0:
             return
         with open(file_name, "w") as f:
             for ctt in content:
-                f.write(ctt + "\n")
+                f.write(ctt.__str__() + "\n")
