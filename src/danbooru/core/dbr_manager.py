@@ -14,7 +14,8 @@ from common.config.config_manager import ConfigManager
 from common.constant.rating import RatingType
 from common.http.http_utils import HttpUtils
 
-LOGGER = logger.bind(module_name='danbooru')
+LOGGER = logger.bind(module_name="danbooru")
+
 
 class DbrManager:
     def __init__(self):
@@ -45,7 +46,11 @@ class DbrManager:
 
                 result = HttpUtils.fetch_with_retry_json(url, params=params, headers={})
                 if result is {} or result is []:
-                    logger.warning("all images has refreshed for rating:{}, total page:{}".format(rating_type, current_page))
+                    logger.warning(
+                        "all images has refreshed for rating:{}, total page:{}".format(
+                            rating_type, current_page
+                        )
+                    )
                     break
 
                 images = self.get_images_from_resp(result)
@@ -55,7 +60,11 @@ class DbrManager:
 
                 # 所有图片都无需下载时，不继续遍历
                 if download_result and is_stop_auto:
-                    LOGGER.warning("no need continue download, current page: {}, url: {}".format(current_page, url))
+                    LOGGER.warning(
+                        "no need continue download, current page: {}, url: {}".format(
+                            current_page, url
+                        )
+                    )
                     break
 
                 time.sleep(0.5)
@@ -68,4 +77,3 @@ class DbrManager:
         else:
             images.append(ImageMeta.build_json_obj(data))
         return images
-

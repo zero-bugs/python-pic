@@ -1,5 +1,5 @@
 {
-  "switch": true,
+  "switch": false,
   "http_proxy": "http://127.0.0.1:10809",
   "https_proxy": "http://127.0.0.1:10809",
   "no_proxy": "192.168.*,127.0.*"

@@ -14,7 +14,7 @@ class LogUtils:
         "formatters": {
             "root_fmt": {
                 "format": "[%(asctime)s][%(name)s][%(levelname)s][line %(lineno)d]%(message)s",
-                "datefmt": "%Y-%m-%dT%H:%M:%S%z"
+                "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             },
         },
         "handlers": {
@@ -35,7 +35,7 @@ class LogUtils:
         "formatters": {
             "standard_fmt": {
                 "format": "[%(asctime)s][%(name)s][%(levelname)s][line %(lineno)d]%(message)s",
-                "datefmt": "%Y-%m-%dT%H:%M:%S%z"
+                "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             },
         },
         "handlers": {
@@ -67,7 +67,7 @@ class LogUtils:
                 "level": "INFO",
                 "handlers": ["file"],
             },
-        }
+        },
     }
 
     @staticmethod
@@ -80,21 +80,23 @@ class LogUtils:
         current_working_directory = os.getcwd()
         log_path = os.path.join(current_working_directory, "..", "log")
         log_file = os.path.join(log_path, "run.log")
-        logger.configure(handlers=[
-            {
-                "sink": sys.stdout,
-                "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>module</>| - <lvl>{message}</>",
-                "colorize": True,
-                "level": "INFO"
-            },
-            {
-                "sink": log_file,
-                "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>module</>| - <lvl>{message}</>",
-                "colorize": False,
-                "level": "INFO",
-                "rotation": '100 MB',
-                "compression": "gz",
-                "retention": 10,
-                "enqueue": True
-            }
-        ])
+        logger.configure(
+            handlers=[
+                {
+                    "sink": sys.stdout,
+                    "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>module</>| - <lvl>{message}</>",
+                    "colorize": True,
+                    "level": "INFO",
+                },
+                {
+                    "sink": log_file,
+                    "format": "{time:YYYY-MM-DD HH:mm:ss.SSS}|<lvl>{level:8}</>|{name}:{module}:{line:4}|<cyan>module</>| - <lvl>{message}</>",
+                    "colorize": False,
+                    "level": "INFO",
+                    "rotation": "5 MB",
+                    "compression": "gz",
+                    "retention": 10,
+                    "enqueue": True,
+                },
+            ]
+        )

@@ -10,7 +10,7 @@ from wh.core.pic_manager import WhPicManager
 # 日志初始化
 LogUtils.logging_init_loguru()
 
-os.environ['NO_PROXY'] = 'localhost'
+os.environ["NO_PROXY"] = "localhost"
 
 
 async def main() -> None:

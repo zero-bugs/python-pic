@@ -9,11 +9,11 @@ from prisma.models import WhImage
 from common.config.config_manager import ConfigManager
 from common.constant.link_status import LinkStatus
 from common.http.http_utils import HttpUtils
-from common.utils.utils import Utils
+from common.utils.config_utils import ConfigUtils
 from wh.db.db_controller import WhDbController
 from wh.meta.image_meta import ImageMeta
 
-LOGGER = logger.bind(module_name='wh')
+LOGGER = logger.bind(module_name="wh")
 
 
 class WhPicManager:
@@ -43,17 +43,17 @@ class WhPicManager:
             "purity": "011",
             "sorting": "date_added",
             "order": "desc",
-            "apikey": self.api_key
+            "apikey": self.api_key,
         }
         headers = {}
         result = HttpUtils.fetch_with_retry_json(url, params=params, headers=headers)
         if result is {}:
             return None
 
-        meta = result['meta']
+        meta = result["meta"]
         last_page = 0
         if meta is not None:
-            last_page = meta['last_page']
+            last_page = meta["last_page"]
 
         LOGGER.info("meta info, meta:{}.".format(meta))
 
@@ -61,12 +61,14 @@ class WhPicManager:
         current_page = 0
         while current_page < last_page:
             current_page += 1
-            params['page'] = current_page
+            params["page"] = current_page
 
             LOGGER.info("current link:{}, page:{}".format(url, current_page))
 
-            result = HttpUtils.fetch_with_retry_json(url, params=params, headers=headers)
-            data = result['data']
+            result = HttpUtils.fetch_with_retry_json(
+                url, params=params, headers=headers
+            )
+            data = result["data"]
 
             images = self.get_images_from_resp(data)
             await self.db_handler.batch_insert_table(images, list(), list())
@@ -75,7 +77,11 @@ class WhPicManager:
 
             # 所有图片都无需下载时，不继续遍历
             if download_result and is_stop_auto:
-                LOGGER.warning("no need continue download, current page: {}, url: {}".format(current_page, url))
+                LOGGER.warning(
+                    "no need continue download, current page: {}, url: {}".format(
+                        current_page, url
+                    )
+                )
                 break
 
             time.sleep(0.5)
@@ -102,55 +108,77 @@ class WhPicManager:
 
         image_actual_no_need_dld = 0
         for image in images:
-            if image['purity'] != 'nsfw' and image['purity'] != 'sketchy':
-                LOGGER.warning("image:{} wrong purity:{}.", image['id'], image['purity'])
+            if image["purity"] != "nsfw" and image["purity"] != "sketchy":
+                LOGGER.warning(
+                    "image:{} wrong purity:{}.", image["id"], image["purity"]
+                )
                 continue
 
             # 检查图片数据库是否存在
-            result = await self.db_handler.find_one_entry(WhImage, image['id'])
+            result = await self.db_handler.find_one_entry(WhImage, image["id"])
             if result is not None and result.status != LinkStatus.INITIAL:
-                LOGGER.warning("image:{} has in db.", image['id'])
+                LOGGER.warning("image:{} has in db.", image["id"])
                 image_actual_no_need_dld += 1
                 continue
 
             # 检查图片本地是否存在
-            image_name, image_name_full_path = self.get_image_full_path_dict(download_path, image)
+            image_name, image_name_full_path = self.get_image_full_path_dict(
+                download_path, image
+            )
             if os.path.exists(image_name_full_path):
-                LOGGER.warning("image:{} has in local:{}.", image['id'], image_name_full_path)
+                LOGGER.warning(
+                    "image:{} has in local:{}.", image["id"], image_name_full_path
+                )
                 image_actual_no_need_dld += 1
                 continue
 
-            status, response = HttpUtils.fetch_with_retry_binary(image['path'])
+            status, response = HttpUtils.fetch_with_retry_binary(image["path"])
             if response is None:
                 await self.db_handler.update_image_status_for_dict(image, status)
-                LOGGER.warning("image:{} with url:{} response is null.", image['id'], image['path'])
+                LOGGER.warning(
+                    "image:{} with url:{} response is null.", image["id"], image["path"]
+                )
                 continue
 
             LOGGER.info(
-                "downloading image id:{}, url:{}, path:{}".format(image['id'], image['path'], image_name_full_path))
+                "downloading image id:{}, url:{}, path:{}".format(
+                    image["id"], image["path"], image_name_full_path
+                )
+            )
             if response.status_code == 200:
-                with open(image_name_full_path, 'wb') as f:
+                with open(image_name_full_path, "wb") as f:
                     f.write(response.content)
-                await self.db_handler.update_image_status_for_dict(image, LinkStatus.DONE)
+                await self.db_handler.update_image_status_for_dict(
+                    image, LinkStatus.DONE
+                )
             if response.status_code == 404:
-                await self.db_handler.update_image_status_for_dict(image, LinkStatus.NOTFOUND)
-                LOGGER.warning("image not found. image id:{}, url:{}".format(image['id'], image['path']))
+                await self.db_handler.update_image_status_for_dict(
+                    image, LinkStatus.NOTFOUND
+                )
+                LOGGER.warning(
+                    "image not found. image id:{}, url:{}".format(
+                        image["id"], image["path"]
+                    )
+                )
         else:
-            LOGGER.info("the count of image which do not need download is: {}, but all list is: {}".format(
-                image_actual_no_need_dld, len(images)))
+            LOGGER.info(
+                "the count of image which do not need download is: {}, but all list is: {}".format(
+                    image_actual_no_need_dld, len(images)
+                )
+            )
             return image_actual_no_need_dld == len(images)
 
     def get_pic_suffix(self, extension):
         if extension is None:
             return ".jpg"
 
-        if 'jpeg' in extension.lower() or 'jpg' in extension.lower():
-            return '.jpg'
-        elif 'png' in extension:
-            return '.png'
+        if "jpeg" in extension.lower() or "jpg" in extension.lower():
+            return ".jpg"
+        elif "png" in extension:
+            return ".png"
         else:
             LOGGER.warning("pic suffix:{} is not support.".format(extension))
-            return '.jpg'
+            return ".jpg"
 
     async def background_full_scan_and_download(self):
         """
@@ -158,12 +186,7 @@ class WhPicManager:
         :return:
         """
         LOGGER.info("begin to execute backup_full_scan_and_download")
-        condition = {
-            "OR": [
-                {"purity": "nsfw"},
-                {"purity": "sketchy"}
-            ]
-        }
+        condition = {"OR": [{"purity": "nsfw"}, {"purity": "sketchy"}]}
         take = 5000
         skip = 0
         download_path = ConfigManager.get_download_root_path()
@@ -175,33 +198,62 @@ class WhPicManager:
             skip += len(images)
 
             for image in images:
-                if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
+                if (
+                    image.status != LinkStatus.INITIAL
+                    and image.status != LinkStatus.DOING
+                ):
                     continue
 
-                LOGGER.info("downloading image:{}, path:{}".format(image.id, image.path))
+                LOGGER.info(
+                    "downloading image:{}, path:{}".format(image.id, image.path)
+                )
                 status, response = HttpUtils.fetch_with_retry_binary(image.path)
                 if response is None:
                     await self.db_handler.update_image_status_for_obj(image, status)
                     continue
 
-                LOGGER.info("downloading image:{}, path:{} success".format(image.id, image.path))
+                LOGGER.info(
+                    "downloading image:{}, path:{} success".format(image.id, image.path)
+                )
 
                 if response.status_code == 200:
-                    _, image_name_full_path = self.get_image_full_name_obj(download_path, image)
+                    _, image_name_full_path = self.get_image_full_name_obj(
+                        download_path, image
+                    )
                     if not os.path.exists(image_name_full_path):
-                        with open(image_name_full_path, 'wb') as f:
+                        with open(image_name_full_path, "wb") as f:
                             f.write(response.content)
-                        LOGGER.info("write image:{} local, path:{} success".format(image.id, image.path))
-                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.DONE)
-                    LOGGER.info("update image:{}, status:{}".format(image.id, LinkStatus.DONE))
+                        LOGGER.info(
+                            "write image:{} local, path:{} success".format(
+                                image.id, image.path
+                            )
+                        )
+                    await self.db_handler.update_image_status_for_obj(
+                        image, LinkStatus.DONE
+                    )
+                    LOGGER.info(
+                        "update image:{}, status:{}".format(image.id, LinkStatus.DONE)
+                    )
                 elif response.status_code == 404:
-                    await self.db_handler.update_image_status_for_obj(image, LinkStatus.NOTFOUND)
-                    LOGGER.info("update image:{}, status:{}".format(image.id, LinkStatus.NOTFOUND))
+                    await self.db_handler.update_image_status_for_obj(
+                        image, LinkStatus.NOTFOUND
+                    )
+                    LOGGER.info(
+                        "update image:{}, status:{}".format(
+                            image.id, LinkStatus.NOTFOUND
+                        )
+                    )
 
     def get_image_full_path_dict(self, download_path, image):
-        image_name = image['id'] + self.get_pic_suffix(image['file_type'])
-        image_full_path = str(os.path.join(download_path, image['category'], image['purity'],
-                                           Utils.get_year_and_month_from_str(image['created_at'])))
+        image_name = image["id"] + self.get_pic_suffix(image["file_type"])
+        image_full_path = str(
+            os.path.join(
+                download_path,
+                image["category"],
+                image["purity"],
+                ConfigUtils.get_year_and_month_from_str(image["created_at"]),
+            )
+        )
         if not os.path.exists(image_full_path):
             os.makedirs(image_full_path, exist_ok=True)
         image_name_full_path = os.path.join(image_full_path, image_name)
@@ -209,8 +261,14 @@ class WhPicManager:
 
     def get_image_full_name_obj(self, download_path, image):
         image_name = image.id + self.get_pic_suffix(image.file_type)
-        image_full_path = str(os.path.join(download_path, image.category, image.purity,
-                                           Utils.get_year_and_month_from_str(image.created_at)))
+        image_full_path = str(
+            os.path.join(
+                download_path,
+                image.category,
+                image.purity,
+                ConfigUtils.get_year_and_month_from_str(image.created_at),
+            )
+        )
         if not os.path.exists(image_full_path):
             os.makedirs(image_full_path, exist_ok=True)
         image_name_full_path = os.path.join(image_full_path, image_name)

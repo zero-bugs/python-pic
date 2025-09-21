@@ -1,4 +1,5 @@
 {
   "type": "wh",
-  "path": "E:\\temp"
+  "path": "E:\\temp",
+  "ignore_ssl_cert": true
 }

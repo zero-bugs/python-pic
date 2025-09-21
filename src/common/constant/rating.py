@@ -12,6 +12,7 @@ class RatingType:
     """
     using for danbooru type resource, such as, konachan and yande
     """
-    SAFE = 's'
-    QUESTIONABLE = 'q'
-    EXPLICIT = 'e'
+
+    SAFE = "s"
+    QUESTIONABLE = "q"
+    EXPLICIT = "e"
