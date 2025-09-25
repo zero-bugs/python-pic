@@ -47,7 +47,7 @@ class SisPageManager:
             )
             await page.goto(page_address, timeout=30000)
 
-            LOGGER.info("current page: {}".format(page_address))
+            LOGGER.info(f"current page: {page_address}")
 
             post_messages = await page.locator(".postmessage").all()
             if post_messages is None:

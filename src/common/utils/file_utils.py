@@ -23,11 +23,6 @@ class FileUtils:
     """
 
     @staticmethod
-    def normalize_windows_path(path):
-        template = r"[\/\\\:\*\?\"\<\>\|]"
-        return re.sub(template, "_", path)
-
-    @staticmethod
     def normalize_str(title):
         rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
         new_title = re.sub(rstr, "_", title)  # 替换为下划线
@@ -49,7 +44,7 @@ class FileUtils:
         if not overwrite and os.path.exists(file_name):
             return
 
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write(content + "\n")
 
     @staticmethod
@@ -65,12 +60,12 @@ class FileUtils:
             os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
         if not overwrite and os.path.exists(file_name):
-            cur_time = ConfigUtils.get_current_time()
+            cur_time = ConfigUtils.get_current_time_for_file()
             index = file_name.rfind(".")
             file_name = file_name[:index] + "_" + cur_time + "." + file_name[index + 1:]
 
         if not content or len(content) == 0:
             return
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             for ctt in content:
                 f.write(ctt.__str__() + "\n")

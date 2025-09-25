@@ -61,39 +61,39 @@ class HttpUtils:
                     proxies=ConfigManager.get_proxy_config(),
                 )
             except HTTPError as he:
-                LOGGER.warning("http error, url:{} not arrived.".format(url))
+                LOGGER.warning("http error, url:{} not arrived.", url)
                 LOGGER.exception(he)
                 status = LinkStatus.DOING
             except ConnectTimeout as ce:
-                LOGGER.warning("connect timeout, url:{} not arrived.".format(url))
+                LOGGER.warning("connect timeout, url:{} not arrived.", url)
                 LOGGER.exception(ce)
                 status = LinkStatus.DOING
             except ReadTimeout as re:
-                LOGGER.warning("read timeout, url:{} not arrived.".format(url))
+                LOGGER.warning("read timeout, url:{} not arrived.", url)
                 LOGGER.exception(re)
                 status = LinkStatus.DOING
             except Timeout as tx:
-                LOGGER.warning("timeout, url:{} not arrived.".format(url))
+                LOGGER.warning("timeout, url:{} not arrived.", url)
                 LOGGER.exception(tx)
                 status = LinkStatus.DOING
             except ProxyError as rx:
-                LOGGER.warning("proxy error, url:{} not arrived.".format(url))
+                LOGGER.warning("proxy error, url:{} not arrived.", url)
                 LOGGER.exception(rx)
                 status = LinkStatus.UNREACHABLE
             except SSLError as se:
-                LOGGER.warning("SSL error, url:{} not arrived.".format(url))
+                LOGGER.warning("SSL error, url:{} not arrived.", url)
                 LOGGER.exception(se)
                 status = LinkStatus.UNREACHABLE
             except RetryError as rx:
-                LOGGER.warning("retry error, url:{} not arrived.".format(url))
+                LOGGER.warning("retry error, url:{} not arrived.", url)
                 LOGGER.exception(rx)
                 status = LinkStatus.UNREACHABLE
             except ConnectionError as ce:
-                LOGGER.warning("connection error, url:{} not arrived.".format(url))
+                LOGGER.warning("connection error, url:{} not arrived.", url)
                 LOGGER.exception(ce)
                 status = LinkStatus.UNREACHABLE
             except BaseException as bx:
-                LOGGER.warning("unexpect error, url:{} not arrived.".format(url))
+                LOGGER.warning("unexpect error, url:{} not arrived.", url)
                 LOGGER.exception(bx)
                 status = LinkStatus.UNREACHABLE
         return status, response
@@ -103,16 +103,12 @@ class HttpUtils:
         result = {}
         _, response = HttpUtils.fetch_with_retry(url, params, headers)
         if response is None:
-            LOGGER.warning("url:{} not arrived.".format(url))
+            LOGGER.warning("url:{} not arrived.", url)
             return result
 
         if response.status_code != 200:
-            LOGGER.warning("url:{} not arrived.".format(url))
-            LOGGER.warning(
-                "request meet some issue: {}, msg:{}".format(
-                    response.status_code, response.text
-                )
-            )
+            LOGGER.warning("url:{} not arrived.", url)
+            LOGGER.warning("request meet some issue: {}, msg:{}", response.status_code, response.text)
             return result
 
         return response.json()

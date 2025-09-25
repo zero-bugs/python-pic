@@ -65,7 +65,7 @@ class FpPageManager:
                 )
 
             await self.db_handler.batch_insert_table(inventories, list(), list())
-            LOGGER.info("batch insert actresses list count:{}".format(len(inventories)))
+            LOGGER.info(f"batch insert actresses list count:{len(inventories)}")
             inventories.clear()
 
         await browser.close()
@@ -98,8 +98,8 @@ class FpPageManager:
 
             for inventory in inventories:
                 if (
-                    inventory.status != LinkStatus.INITIAL
-                    and inventory.status != LinkStatus.DOING
+                        inventory.status != LinkStatus.INITIAL
+                        and inventory.status != LinkStatus.DOING
                 ):
                     continue
                 current_url = inventory.url
@@ -111,20 +111,14 @@ class FpPageManager:
                     await page.goto(current_url, timeout=600000)
                     articles = await page.query_selector_all("article")
                     for article in articles:
-                        LOGGER.info(
-                            "begin to find article by url:{}".format(current_url)
-                        )
+                        LOGGER.info(f"begin to find article by url:{current_url}")
                         article_id = await article.get_attribute("id")
                         url_element = await article.query_selector(".entry-title a")
                         if url_element is None:
                             await self.db_handler.update_inventory_status(
                                 inventory, LinkStatus.NOTFOUND
                             )
-                            LOGGER.warning(
-                                "actress:{} link:{} not found.".format(
-                                    inventory.name, current_url
-                                )
-                            )
+                            LOGGER.warning(f"actress:{inventory.name} link:{current_url} not found")
                             status = LinkStatus.NOTFOUND
                             break
 
@@ -157,26 +151,16 @@ class FpPageManager:
                         plain_next_page = await next_page_element.inner_text()
                     if "Older posts" in plain_next_page:
                         current_url = await next_page_element.get_attribute("href")
-                        LOGGER.info(
-                            "article page more one, name:{}, page:{}".format(
-                                inventory.name, current_url
-                            )
-                        )
+                        LOGGER.info(f"article page more one, name:{inventory.name}, page:{current_url}")
                     else:
                         break
 
                 await self.db_handler.batch_insert_table(list(), article_list, list())
-                LOGGER.info(
-                    "batch insert articles list count:{}".format(len(article_list))
-                )
+                LOGGER.info(f"batch insert articles list count:{len(article_list)}")
                 article_list.clear()
 
                 await self.db_handler.update_inventory_status(inventory, status)
-                LOGGER.info(
-                    "update inventory name:{} status from {} to {}".format(
-                        inventory.name, inventory.status, status
-                    )
-                )
+                LOGGER.info(f"update inventory name:{inventory.name} status from {inventory.status} to {status}")
         # 关闭
         await browser.close()
         await playwright.stop()
@@ -211,11 +195,7 @@ class FpPageManager:
                     continue
                 current_url = article.url
 
-                LOGGER.info(
-                    "begin to find all resources by article:{}, article id:{}".format(
-                        current_url, article.article_id
-                    )
-                )
+                LOGGER.info(f"begin to find all resources by article:{current_url}, article id:{article.article_id}")
 
                 # 不需要考虑多page场景
                 await page.goto(current_url, timeout=600000)
@@ -226,7 +206,7 @@ class FpPageManager:
                     await self.db_handler.update_article_status(
                         article, LinkStatus.NOTFOUND
                     )
-                    LOGGER.info("article url:{} not found.".format(current_url))
+                    LOGGER.info(f"article url:{current_url} not found.")
                     continue
 
                 # 图片资源
@@ -253,7 +233,7 @@ class FpPageManager:
                 img_element = await post_element.query_selector_all(
                     ".entry-content >> img"
                 )
-                LOGGER.info("begin to find image by url:{}".format(current_url))
+                LOGGER.info(f"begin to find image by url:{current_url}")
                 for img_element in img_element:
                     url = await img_element.get_attribute("src")
                     summary = await img_element.get_attribute("alt")
@@ -271,7 +251,7 @@ class FpPageManager:
                 video_element = await post_element.query_selector_all(
                     ".entry-content >> video"
                 )
-                LOGGER.info("begin to find video by url:{}".format(current_url))
+                LOGGER.info(f"begin to find video by url:{current_url}")
                 for video_element in video_element:
                     source_element = await video_element.query_selector("source")
                     url = await source_element.get_attribute("src")
@@ -290,25 +270,15 @@ class FpPageManager:
                     await self.db_handler.batch_insert_table(
                         list(), list(), resource_list
                     )
-                    LOGGER.info(
-                        "batch insert images list count:{}".format(len(resource_list))
-                    )
+                    LOGGER.info(f"batch insert images list count:{len(resource_list)}")
                 else:
-                    LOGGER.warning(
-                        "find all resources by url:{} has no articles.".format(
-                            current_url
-                        )
-                    )
+                    LOGGER.warning(f"find all resources by url:{current_url} has no articles")
 
                 await self.db_handler.update_article_status(article, LinkStatus.DONE)
                 LOGGER.info("article url:{} obtain success.".format(current_url))
                 resource_list.clear()
             else:
-                LOGGER.info(
-                    "end to find to resources, articles num:{}, do next batch".format(
-                        len(articles)
-                    )
-                )
+                LOGGER.info(f"end to find to resources, articles num:{len(articles)}, do next batch")
 
         # 关闭
         await browser.close()
@@ -340,13 +310,9 @@ class FpPageManager:
                         pixel = pixel_temp
                         url = url_temp
                 else:
-                    LOGGER.warning("src:{}, srcset:{} not normal.".format(src, srcset))
+                    LOGGER.warning(f"src:{src}, srcset:{srcset} not normal")
             else:
-                LOGGER.warning(
-                    "src:{}, srcset:{} not normal.element:{} can not split.".format(
-                        src, srcset, element
-                    )
-                )
+                LOGGER.warning(f"src:{src}, srcset:{srcset} not normal.element:{element} can not split")
         return url
 
     async def download_all_resources_by_link(self):
@@ -382,13 +348,9 @@ class FpPageManager:
                         )
 
                     start = time.time()
-                    LOGGER.info("begin to execute thread num:{}".format(len(subtasks)))
+                    LOGGER.info(f"begin to execute thread num:{len(subtasks)}")
                     done = await asyncio.gather(*subtasks)
-                    LOGGER.info(
-                        "end to execute thread num:{}, time:{:f}".format(
-                            len(subtasks), time.time() - start
-                        )
-                    )
+                    LOGGER.info(f"end to execute thread num:{len(subtasks)}, time:{time.time() - start:f}")
                     for rs in done:
                         status = rs[0]
                         image = rs[1]
@@ -396,12 +358,8 @@ class FpPageManager:
                             await self.db_handler.update_image_status_for_obj(
                                 image, status
                             )
-                            LOGGER.info(
-                                "update image url:{}, id:{}, status:{}".format(
-                                    image.url, image.article_id, status
-                                )
-                            )
-                    LOGGER.info("end to execute thread done num:{}".format(len(done)))
+                            LOGGER.info(f"update image url:{image.url}, id:{image.article_id}, status:{status}")
+                    LOGGER.info(f"end to execute thread done num:{len(done)}")
 
     async def get_image_full_name_obj(self, download_path, image):
         url = image.url
@@ -410,7 +368,7 @@ class FpPageManager:
         elif image.type == ResourceType.FP_VIDEO:
             name = url.split("?")[0].split("/")[-1]
         else:
-            LOGGER.warning("unknown resource type:{}".format(image.type))
+            LOGGER.warning(f"unknown resource type:{image.type}")
             name = ""
 
         # 找到article
@@ -419,14 +377,14 @@ class FpPageManager:
             actress_name = "other"
             title = "unknown"
         else:
-            actress_name = FileUtils.normalize_windows_path(article.name)
-            title = FileUtils.normalize_windows_path(article.title)
+            actress_name = FileUtils.normalize_str(article.name)
+            title = FileUtils.normalize_str(article.title)
 
         path = str(os.path.join(download_path, actress_name, title))
         if not os.path.exists(path):
             os.makedirs(path)
         full_path_name = os.path.join(path, name)
-        LOGGER.debug("get full image path:{}".format(full_path_name))
+        LOGGER.debug(f"get full image path:{full_path_name}")
         return full_path_name
 
     def download_one_image(self, image, image_name_full_name):
@@ -440,62 +398,37 @@ class FpPageManager:
         if image.status != LinkStatus.INITIAL and image.status != LinkStatus.DOING:
             return status, image
 
-        LOGGER.info(
-            "downloading image:{}, article id:{}".format(image.url, image.article_id)
-        )
+        LOGGER.info(f"downloading image:{image.url}, article id:{image.article_id}")
         status, response = HttpUtils.fetch_with_retry_binary(image.url)
         if response is None:
             return status, image
 
-        LOGGER.info(
-            "downloading image:{}, path:{} success".format(image.url, image.article_id)
-        )
+        LOGGER.info(f"downloading image:{image.url}, path:{image.article_id} success")
 
         if response.status_code == 200:
             # 不存在时或者大小为零，才会覆盖写
             if (
-                not os.path.exists(image_name_full_name)
-                or os.stat(image_name_full_name).st_size == 0
+                    not os.path.exists(image_name_full_name)
+                    or os.stat(image_name_full_name).st_size == 0
             ):
-                LOGGER.info(
-                    "write image:{} local, path:{} success".format(
-                        image.url, image_name_full_name
-                    )
-                )
-                with open(image_name_full_name, "wb") as f:
+                LOGGER.info(f"write image:{image.url} local, path:{image_name_full_name} success")
+                with open(image_name_full_name, 'wb') as f:
                     f.write(response.content)
-                LOGGER.info(
-                    "write image:{} local, path:{} success".format(
-                        image.url, image_name_full_name
-                    )
-                )
+                LOGGER.info(f"write image:{image.url} local, path:{image_name_full_name} success")
             status = LinkStatus.DONE
-            LOGGER.info(
-                "update image:{}, id:{}, status:{}".format(
-                    image.url, image.article_id, LinkStatus.DONE
-                )
-            )
+            LOGGER.info(f"update image:{image.url}, id:{image.article_id}, status:{LinkStatus.DONE}")
         elif response.status_code == 404:
             status = LinkStatus.NOTFOUND
             LOGGER.info(
-                "update image:{}, id:{}, status:{}, http code:{}".format(
-                    image.url, image.article_id, status, response.status_code
-                )
-            )
+                f"update image:{image.url}, id:{image.article_id}, status:{status}, http code:{response.status_code}")
         elif response.status_code == 302:
             status = LinkStatus.UNREACHABLE
             LOGGER.info(
-                "update image:{}, id:{}, status:{}, http code:{}".format(
-                    image.url, image.article_id, status, response.status_code
-                )
-            )
+                f"update image:{image.url}, id:{image.article_id}, status:{status}, http code:{response.status_code}")
         elif response.status_code == 301:
             status = LinkStatus.UNREACHABLE
             LOGGER.info(
-                "update image:{}, id:{}, status:{}, http code:{}".format(
-                    image.url, image.article_id, status, response.status_code
-                )
-            )
+                f"update image:{image.url}, id:{image.article_id}, status:{status}, http code:{response.status_code}")
         return status, image
 
     def run_in_thread_pool(self, image, full_name):

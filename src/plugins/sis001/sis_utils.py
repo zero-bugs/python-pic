@@ -26,7 +26,7 @@ class SisUtils:
             LOGGER.warning("image:{}, response is null.", url)
             return None
 
-        LOGGER.info("downloading image id:{}, path:{}".format(url, name))
+        LOGGER.info(f"downloading image id:{url}, path:{name}")
         if response.status_code == 200:
             with open(name, "wb") as f:
                 f.write(response.content)

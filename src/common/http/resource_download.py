@@ -73,9 +73,10 @@ EXCLUDED_RESOURCE_TYPES = {"stylesheet", "script", "image", "font", "video"}
 
 class ResourceDownloadUtils:
     @staticmethod
-    def download_image(url, name):
+    def download_image(url, name, process=None):
         """
         下载图片
+        :param process:
         :param url: 图片link
         :param name: 图片保存地址全路径
         :return: None
@@ -84,23 +85,24 @@ class ResourceDownloadUtils:
             os.makedirs(os.path.dirname(name), exist_ok=True)
 
         if os.path.exists(name):
-            LOGGER.warning("url:{}, name:{} has existed.".format(url, name))
+            LOGGER.warning(f"url:{url}, name:{name} has existed.")
             return
         status, response = HttpUtils.fetch_with_retry_binary(url)
         if response is None:
             LOGGER.warning("image:{}, response is null.", url)
             return None
 
-        LOGGER.info("downloading image id:{}, path:{}".format(url, name))
+        msg = f"downloading image id:{url}, path:{name}"
+        if process:
+            msg = f"downloading[{process}] image id:{url}, path:{name}"
+        LOGGER.info(msg)
         if response.status_code == 200:
             with open(name, "wb") as f:
                 f.write(response.content)
         elif response.status_code == 404:
-            LOGGER.warning("url:{} not found".format(url))
+            LOGGER.warning(f"url:{url} not found")
         else:
-            LOGGER.warning(
-                "url:{} error with code:{}".format(url, response.status_code)
-            )
+            LOGGER.warning(f"url:{url} error with code:{response.status_code}")
 
     @staticmethod
     def pic_link_filter(pic: str):
@@ -125,7 +127,7 @@ class ResourceDownloadUtils:
         elif any(route.request.url.lower().endswith(ext) for ext in IMAGE_SETTING):
             await route.abort()
         elif any(
-            route.request.url.lower().endswith(ext) for ext in SCRIPT_CODE_SETTING
+                route.request.url.lower().endswith(ext) for ext in SCRIPT_CODE_SETTING
         ):
             await route.abort()
         else:

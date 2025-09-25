@@ -25,8 +25,8 @@ LOGGER = logger.bind(module_name=__name__)
 
 class CosBlayPageManager:
     def __init__(self):
-        self.host = CosBlayConstant.HOST_KR
-        self.download_dir = CosBlayConstant.DOWNLOAD_DIR
+        self.host = None
+        self.download_dir = None
 
         # 详情页
         self.article = None
@@ -86,11 +86,7 @@ class CosBlayPageManager:
                     href = await link.get_attribute("href")
                     if ResourceDownloadUtils.pic_link_filter(href):
                         self.img_all_links.add(href)
-                LOGGER.info(
-                    "article:{}, picture count:{}.".format(
-                        self.article, len(self.img_all_links)
-                    )
-                )
+                LOGGER.info(f"article:{self.article}, picture count:{len(self.img_all_links)}")
 
                 await self.__download_all_link_by_serial()
                 self.img_all_links.clear()
@@ -114,7 +110,7 @@ class CosBlayPageManager:
             ".site-content > .content-area > .site-main article > .inside-article > .entry-header > .entry-title"
         ).inner_text()
         if title and title.strip() != "":
-            self.title = title.strip()
+            self.title = FileUtils.normalize_str(title.strip())
         artile_meta = await page.locator(
             ".site-content > .content-area > .site-main article"
         ).all()
@@ -143,7 +139,7 @@ class CosBlayPageManager:
             title = await titles[0].inner_text()
 
         if title and title.strip() != "":
-            self.title = title.strip()
+            self.title = FileUtils.normalize_str(title.strip())
         LOGGER.info(f"host:{self.host}, title:{self.title}")
 
         if self.title is None:
@@ -152,9 +148,16 @@ class CosBlayPageManager:
         return False
 
     async def init_params(self, start_page):
+        self.host = None
+        self.download_dir = None
+        self.article = None
+        self.title = None
+        self.img_all_links.clear()
+        self.page_all_links.clear()
+
         url = urllib.parse.urlparse(start_page)
         self.host = url.hostname
-        self.download_dir = os.path.join(self.download_dir, self.host)
+        self.download_dir = os.path.join(CosBlayConstant.DOWNLOAD_DIR, self.host)
         if self.host is None or self.host == "":
             raise ValueError("host param is None")
 
@@ -183,7 +186,7 @@ class CosBlayPageManager:
 
         is_first_page = True
         while True:
-            LOGGER.info("begin to access:{}".format(start_address))
+            LOGGER.info(f"begin to access:{start_address}")
             try:
                 await page.goto(
                     start_address,
@@ -219,10 +222,11 @@ class CosBlayPageManager:
             CommonUtils.waiting_with_print(random.randint(10, 30))
             LOGGER.info(f"current page links:{len(self.page_all_links)}, next page:{start_address}")
 
-        LOGGER.info(f"begin to print links for main page:{start_page}, keyword: {keyword}")
 
-        file_name_lst = os.path.join(self.download_dir, self.title + ".txt")
-        FileUtils.write_list_to_file(file_name_lst, list(self.page_all_links))
+
+        file_lst_name = os.path.join(self.download_dir, self.title + ".txt")
+        LOGGER.info(f"begin to print links for main page:{start_page}, keyword: {keyword}, filename:{file_lst_name}")
+        FileUtils.write_list_to_file(file_lst_name, list(self.page_all_links))
 
         await browser.close()
         await playwright.stop()
@@ -299,10 +303,10 @@ class CosBlayPageManager:
 
     async def __download_all_link_by_serial(self):
         if len(self.img_all_links) == 0:
-            LOGGER.warning("title:{} has no links.".format(self.title))
+            LOGGER.warning(f"title:{self.title} has no links.")
             return
         if self.article is None:
-            LOGGER.warning("title:{} has not been loaded.".format(self.title))
+            LOGGER.warning(f"title:{self.title} has not been loaded.")
             return
 
         img_path = os.path.join(
@@ -312,8 +316,10 @@ class CosBlayPageManager:
             FileUtils.normalize_str(self.article),
         )
 
+        total = len(self.img_all_links)
+        cur = 0
         for link in self.img_all_links:
+            cur += 1
             filename = link.split("/")[-1]
             file_full_path = os.path.join(f"%s" % img_path, filename)
-
-            ResourceDownloadUtils.download_image(link, file_full_path)
+            ResourceDownloadUtils.download_image(link, file_full_path, f"{(cur/total)*100:.1f}%")
